@@ -1,12 +1,10 @@
 # nessus-parser
 
-**Stop chasing false positives. Automate validation. No more manual verification.**
+A command-line tool for automated active validation of Nessus vulnerability findings. Rather than accepting scanner output at face value, nessus-parser re-probes each finding directly against the target host and port — using `curl`, `nmap`, banner grabs, and version API calls — to produce an evidence-based verdict on whether the vulnerability is confirmed, patched, or unreachable.
 
-Nessus reports vulnerabilities based on version detection and plugin logic — but that does not mean every finding is real. Services get patched without version strings changing, ports get firewalled, and products get miscounted. Manually verifying hundreds of findings per engagement is slow, inconsistent, and error-prone.
+Designed for penetration testers and vulnerability assessment teams who need to reduce false positive noise and deliver accurate, defensible results without spending hours on manual verification. A single command processes an entire `.nessus` file, runs the appropriate detection logic per finding, and produces a triage-ready report with clear status codes.
 
-nessus-parser eliminates that toil. Feed it a `.nessus` scan file and it automatically re-probes every finding — running targeted `curl`, `nmap`, banner grab, and version API commands directly against each host and port Nessus reported. No human touch required between scan and verdict. Each finding comes back with a clear, automated result: `validated`, `not_validated`, `port_closed`, `auth_required`, and more. The output is a triage-ready report that tells you exactly where to focus, generated in seconds instead of hours.
-
-**2,890 validation playbooks** included out of the box, covering critical through low severity findings across MySQL, GitLab, Apache Tomcat, Fortinet, Splunk, WordPress, Confluence, Jenkins, PHP, SAP, WebSphere, and hundreds more. No internet connection required — everything runs locally from the analyst machine against the target environment.
+**2,890 validation playbooks** are included covering critical through low severity findings across MySQL, GitLab, Apache Tomcat, Fortinet, Splunk, WordPress, Confluence, Jenkins, PHP, SAP, IBM WebSphere, and hundreds of additional products. The tool operates fully offline — no external services, no telemetry, no data leaves the analyst machine.
 
 ---
 
