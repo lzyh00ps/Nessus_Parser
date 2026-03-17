@@ -192,18 +192,27 @@ def main() -> None:
             if not matching_plugin_ids:
                 output = f"No matching playbooks found for plugins present in {args.scan_file}"
             else:
-                print(
-                    f"Validating {len(matching_plugin_ids)} plugin(s)...",
-                    file=sys.stderr,
-                    flush=True,
-                )
-                output = validate_scan_file_all(
-                    DB_PATH,
-                    args.scan_file,
-                    matching_plugin_ids,
-                    persist_results=True,
-                    project_name=project_name,
-                )
+                total = len(matching_plugin_ids)
+                playbook_names = {pid: name for pid, name, _ in list_playbooks(DB_PATH)}
+                reports: list[str] = []
+                for index, plugin_id in enumerate(matching_plugin_ids, start=1):
+                    name = playbook_names.get(plugin_id, "")
+                    label = f"{plugin_id} ({name})" if name else str(plugin_id)
+                    print(
+                        f"[{index}/{total}] validating {label}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
+                    reports.append(
+                        validate_scan_file(
+                            DB_PATH,
+                            args.scan_file,
+                            plugin_id,
+                            persist_results=True,
+                            project_name=project_name,
+                        )
+                    )
+                output = "\n\n".join(reports)
         if args.output_path is not None:
             args.output_path.parent.mkdir(parents=True, exist_ok=True)
             args.output_path.write_text(output + "\n")

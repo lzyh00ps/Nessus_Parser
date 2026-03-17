@@ -247,7 +247,9 @@ def validate_scan_file_all(
     persist_results: bool = False,
     project_name: str = "default",
 ) -> str:
-    scan_plugin_ids = set(list_scan_plugin_ids(scan_path))
+    # include_informational=True: callers already applied severity filtering;
+    # re-filtering here would silently drop severity=0 (informational) plugins.
+    scan_plugin_ids = set(list_scan_plugin_ids(scan_path, include_informational=True))
     matching_plugin_ids = [plugin_id for plugin_id in plugin_ids if plugin_id in scan_plugin_ids]
     if not matching_plugin_ids:
         return f"No matching playbooks found for plugins present in {scan_path}"
