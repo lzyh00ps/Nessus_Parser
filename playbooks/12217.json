@@ -3,7 +3,7 @@
   "finding_name": "DNS Server Cache Snooping Remote Information Disclosure",
   "service": "dns",
   "port_logic": "use_scan_port",
-  "command_template": "nmap -sU -p {port} --script dns-cache-snoop.nse --script-args 'dns-cache-snoop.mode=timed,dns-cache-snoop.domains={google.com,facebook.com,youtube.com,tesla.com,instagram.com,linkedin.com}' {host}",
+  "command_template": "nmap -sU -p {port} --script dns-cache-snoop.nse --script-args 'dns-cache-snoop.mode=timed,dns-cache-snoop.domains={{google.com,facebook.com,youtube.com,tesla.com,instagram.com,linkedin.com}}' {host}",
   "timeout_seconds": 30,
   "allowed_ports": [],
   "blocked_ports": [],
