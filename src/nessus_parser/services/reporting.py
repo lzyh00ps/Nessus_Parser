@@ -3,14 +3,47 @@ from __future__ import annotations
 import csv
 import html
 import json
+import re
 from pathlib import Path
 
-from nessus_parser.services.playbooks import list_playbook_plugin_ids
+from nessus_parser.services.playbooks import get_playbook, list_playbook_plugin_ids
 from nessus_parser.services.scans import get_plugin_details
 from nessus_parser.services.validation import (
     get_latest_validation_results,
     get_validation_summary,
 )
+
+
+def _extract_highlight_terms(stdout: str, playbook: dict) -> list[str]:
+    """Return the specific strings in stdout that justify the validated verdict.
+
+    Only includes what actually matched — version pattern captures and
+    validated_if literal strings — so the report highlights precisely the
+    evidence, nothing else.
+    """
+    terms: list[str] = []
+    stdout_lower = stdout.lower()
+
+    version_rule = playbook.get("version_rule") or {}
+    for pat in version_rule.get("version_patterns", []):
+        try:
+            m = re.search(pat, stdout, re.IGNORECASE)
+            if m:
+                # Prefer the first capture group (the version number itself);
+                # fall back to the full match for context.
+                term = m.group(1) if m.lastindex and m.lastindex >= 1 else m.group(0)
+                if term:
+                    terms.append(term)
+        except re.error:
+            pass
+
+    for term in playbook.get("validated_if", []):
+        if term and term.lower() in stdout_lower:
+            terms.append(term)
+
+    # Deduplicate while preserving order
+    seen: set[str] = set()
+    return [t for t in terms if not (t in seen or seen.add(t))]  # type: ignore[func-returns-value]
 
 
 def build_plugin_report(db_path: Path, plugin_id: int) -> str:
@@ -115,12 +148,20 @@ def export_all_reports_html(db_path: Path, output_path: Path) -> Path:
         validated_sample = None
         for row in latest_results:
             if row[2] == "validated":
+                stdout = (row[8] or "").strip()
+                stderr = (row[9] or "").strip()
+                playbook = get_playbook(db_path, plugin_id)
+                highlight_terms = (
+                    _extract_highlight_terms(stdout or stderr, playbook)
+                    if playbook else []
+                )
                 validated_sample = {
                     "host": row[0],
                     "port": row[1],
                     "command": row[5],
-                    "stdout": (row[8] or "").strip(),
-                    "stderr": (row[9] or "").strip(),
+                    "stdout": stdout,
+                    "stderr": stderr,
+                    "highlight_terms": highlight_terms,
                 }
                 break
 
@@ -286,7 +327,7 @@ def export_all_reports_html(db_path: Path, output_path: Path) -> Path:
         let evidenceHtml = '';
         if (sample) {
           const rawOutput = (sample.stdout || sample.stderr || '(no output captured)');
-          const highlighted = highlightEvidence(escapeHtml(rawOutput));
+          const highlighted = highlightEvidence(escapeHtml(rawOutput), sample.highlight_terms || []);
           evidenceHtml = `
             <div class="evidence-label">Validated evidence sample &mdash; ${escapeHtml(String(sample.host))}:${escapeHtml(String(sample.port))}</div>
             <div class="evidence-toggle" id="toggle-${uid}" onclick="toggleEvidence('${uid}')">
@@ -409,24 +450,20 @@ ${highlighted}</div>`;
       toggle.querySelector('.toggle-icon').textContent = opening ? '+' : '+';
     }
 
-    // Highlight version numbers, TLS/SSL labels, CVE IDs, protocol strings in red.
-    function highlightEvidence(text) {
-      // Patterns to highlight (applied in order, non-overlapping via placeholder trick)
-      const patterns = [
-        // CVE identifiers
-        { re: /(CVE-[0-9]{4}-[0-9]+)/gi },
-        // Version numbers: v1.2.3, 1.2.3, 1.2.3.4
-        { re: /(\\bv?[0-9]+\\.[0-9]+(?:\\.[0-9]+){0,2}\\b)/g },
-        // TLS / SSL protocol versions
-        { re: /(\\bTLS\\s*v?[0-9][0-9.]*|\\bSSL\\s*v?[0-9][0-9.]*|\\bTLSv[0-9][0-9.]*|\\bSSLv[0-9][0-9.]*)/gi },
-        // OpenSSL / LibreSSL label
-        { re: /(\\bOpenSSL\\b|\\bLibreSSL\\b)/gi },
-        // Weak cipher suites
-        { re: /(\\b(?:RC4|DES|3DES|NULL|EXPORT|MD5|SHA1|ANON|ADH|AECDH)\\b)/gi },
-      ];
+    // Highlight only the specific terms that justify the validated verdict for this finding.
+    function highlightEvidence(text, terms) {
+      if (!terms || !terms.length) return text;
       let result = text;
-      for (const { re } of patterns) {
-        result = result.replace(re, '<span class="ev-highlight">$1</span>');
+      for (const term of terms) {
+        if (!term) continue;
+        // Escape the term for use in a regex, then do a case-insensitive global replace.
+        const escaped = term.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
+        try {
+          result = result.replace(
+            new RegExp('(' + escaped + ')', 'gi'),
+            '<span class="ev-highlight">$1</span>'
+          );
+        } catch (e) { /* skip malformed term */ }
       }
       return result;
     }
