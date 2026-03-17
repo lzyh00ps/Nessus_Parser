@@ -3,7 +3,7 @@
   "finding_name": "HSTS Missing From HTTPS Server (RFC 6797)",
   "service": "https",
   "port_logic": "use_scan_port",
-  "command_template": "testssl.sh --headers https://{host}:{port}",
+  "command_template": "testssl.sh --color 0 --headers https://{host}:{port}",
   "timeout_seconds": 45,
   "allowed_ports": [],
   "blocked_ports": [],
