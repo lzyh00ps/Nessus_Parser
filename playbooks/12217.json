@@ -3,37 +3,45 @@
   "finding_name": "DNS Server Cache Snooping Remote Information Disclosure",
   "service": "dns",
   "port_logic": "use_scan_port",
-  "command_template": "sh -c 'out=$(dig @{host} example.com A +norecurse +time=5 +tries=1 2>&1); printf \"%s\\n\" \"$out\"; printf \"%s\\n\" \"$out\" | grep -qi \"status: noerror\" && printf \"%s\\n\" \"$out\" | grep -Eqi \"ANSWER: [1-9]\" && printf \"%s\\n\" \"$out\" | grep -qi \"example.com\\.\" && echo CACHE_SNOOPING_ENABLED || echo CACHE_SNOOPING_DISABLED'",
-  "timeout_seconds": 15,
-  "allowed_ports": [53],
+  "command_template": "nmap -sU -p {port} --script dns-cache-snoop.nse --script-args 'dns-cache-snoop.mode=timed,dns-cache-snoop.domains={google.com,facebook.com,youtube.com,tesla.com,instagram.com,linkedin.com}' {host}",
+  "timeout_seconds": 30,
+  "allowed_ports": [],
   "blocked_ports": [],
   "starttls_protocol_map": {},
-  "fallback_commands": [],
+  "fallback_commands": [
+    "sh -c 'out=$(dig @{host} -p {port} google.com A +norecurse +time=5 +tries=1 2>&1); printf \"%s\\n\" \"$out\"; printf \"%s\\n\" \"$out\" | grep -qi \"status: noerror\" && printf \"%s\\n\" \"$out\" | grep -Eqi \"ANSWER: [1-9]\" && echo CACHE_SNOOPING_ENABLED || echo CACHE_SNOOPING_DISABLED'"
+  ],
   "version_rule": {},
   "validated_if": [
+    "TIMED",
     "cache_snooping_enabled"
   ],
   "validated_if_absent": [],
   "not_validated_if": [
+    "0 domains were found to be cached",
     "cache_snooping_disabled"
   ],
   "not_validated_if_present": [],
   "inconclusive_if": [
-    "connection timed out",
-    "communications error",
-    "no servers could be reached",
-    "failed to resolve"
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "no route to host",
+    "network is unreachable"
   ],
   "failure_reason_map": {
-    "connection timed out": "port_filtered",
-    "communications error": "inconclusive",
-    "no servers could be reached": "host_down",
-    "failed to resolve": "host_down"
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
   },
+  "analyst_note": "DNS cache snooping via timed mode. Cached domains indicate the server is resolving and caching external queries — confirming recursive resolution is exposed.",
   "references": [
-    "https://bind9.readthedocs.io/",
-    "https://manpages.debian.org/dig"
+    "https://nmap.org/nsedoc/scripts/dns-cache-snoop.html"
   ],
   "reviewed_by": "analyst",
-  "last_verified": "2026-03-16"
+  "last_verified": "2026-03-17"
 }
