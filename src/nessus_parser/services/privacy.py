@@ -23,10 +23,18 @@ def sanitize_database(db_path: Path, project_name: str | None = None) -> dict[st
             connection.execute("DELETE FROM findings WHERE project_name = ?", (project_name,))
             connection.execute("DELETE FROM validation_runs WHERE project_name = ?", (project_name,))
         connection.commit()
-        connection.execute("VACUUM")
-        return {
-            "findings_deleted": findings_count,
-            "validation_runs_deleted": validation_runs_count,
-        }
     finally:
         connection.close()
+
+    # VACUUM requires an exclusive lock with no other connections open.
+    # Open a fresh connection after the previous one is fully closed.
+    vacuum_conn = connect(db_path)
+    try:
+        vacuum_conn.execute("VACUUM")
+    finally:
+        vacuum_conn.close()
+
+    return {
+        "findings_deleted": findings_count,
+        "validation_runs_deleted": validation_runs_count,
+    }
