@@ -1,0 +1,20 @@
+{
+  "plugin_id": 71629,
+  "finding_name": "sl_20131220_ca_certificates_on_SL6_x",
+  "service": null,
+  "port_logic": "use_scan_port",
+  "command_template": "echo 'define validation command for {host}:{port}'",
+  "timeout_seconds": 30,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "validated_if": [],
+  "validated_if_absent": [],
+  "not_validated_if": [],
+  "not_validated_if_present": [],
+  "inconclusive_if": [],
+  "failure_reason_map": {},
+  "references": [],
+  "reviewed_by": null,
+  "last_verified": null
+}

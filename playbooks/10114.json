@@ -1,0 +1,36 @@
+{
+  "plugin_id": 10114,
+  "finding_name": "ICMP Timestamp Request Remote Date Disclosure",
+  "service": "icmp",
+  "port_logic": "use_scan_port",
+  "command_template": "nping --icmp --icmp-type 13 --count 1 {host}",
+  "timeout_seconds": 15,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "timestamp reply"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "0 packets received"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "operation not permitted",
+    "failed to resolve",
+    "timed out"
+  ],
+  "failure_reason_map": {
+    "operation not permitted": "inconclusive",
+    "failed to resolve": "host_down",
+    "timed out": "host_down"
+  },
+  "references": [
+    "https://nmap.org/nping/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

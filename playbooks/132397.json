@@ -1,0 +1,67 @@
+{
+  "plugin_id": 132397,
+  "finding_name": "Citrix ADC / NetScaler Gateway Path Traversal Remote Code Execution (CVE-2019-19781)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/vpns/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I https://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "Citrix",
+    "NetScaler",
+    "CitrixAGBasic",
+    "NSC_",
+    "Set-Cookie: NSC_"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "citrix",
+      "netscaler"
+    ],
+    "version_patterns": [
+      "NetScaler[/ ]([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "Citrix[^0-9]*([0-9]+\\.[0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "10.5.70.12",
+    "fixed_version": "10.5.70.12 / 11.1.63.15 / 12.0.63.13 / 12.1.55.18 / 13.0.47.24"
+  },
+  "analyst_note": "CVE-2019-19781: Path traversal / RCE in Citrix ADC (NetScaler) and Citrix Gateway (formerly NetScaler Gateway). CVSS 9.8. Affects 10.5.x, 11.1.x, 12.0.x, 12.1.x, 13.0.x. The /vpns/ directory is characteristic of Citrix Gateway deployments. NSC_ cookies in the response are a strong indicator of Citrix ADC/NetScaler presence. Version detection remotely is difficult \u2014 if Citrix indicators are present, treat as inconclusive and verify patches manually. Massively exploited within weeks of disclosure.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2019-19781",
+    "https://support.citrix.com/article/CTX267027",
+    "https://github.com/projectzeroindia/CVE-2019-19781",
+    "https://github.com/trustedsec/cve-2019-19781",
+    "https://www.exploit-db.com/exploits/47901"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

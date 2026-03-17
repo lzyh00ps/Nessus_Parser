@@ -1,0 +1,49 @@
+{
+  "plugin_id": 14232,
+  "finding_name": "VPOP3 Mail Server Denial of Service",
+  "service": "banner",
+  "command_template": "nmap -Pn -sV --version-light -p {port} {host}",
+  "timeout_seconds": 20,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "vpop3",
+    "paul smith computer services"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "postfix",
+    "exim",
+    "sendmail",
+    "microsoft esmtp",
+    "exchange",
+    "dovecot"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "operation not permitted"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "host_down",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "operation not permitted": "inconclusive"
+  },
+  "references": [
+    "https://www.pscs.co.uk/software/vpop3/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16",
+  "fallback_commands_json": [
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "plugin_id": 156443,
+  "finding_name": "JQuery UI < 1.13.0 Multiple XSS",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "jquery"
+    ],
+    "version_patterns": [
+      "jquery[/ -]([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "jQuery v([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "jquery v([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "jquery-([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "1.13.0",
+    "fixed_version": "1.13.0"
+  },
+  "analyst_note": "jQuery version in page source script includes. Fixed: 1.13.0. CVEs: CVE-2021-41182, CVE-2021-41183, CVE-2021-41184.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2021-41182",
+    "https://blog.jqueryui.com/2021/10/jquery-ui-1-13-0-released/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

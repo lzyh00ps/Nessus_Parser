@@ -1,0 +1,58 @@
+{
+  "plugin_id": 121472,
+  "finding_name": "Citrix NetScaler Gateway TLS Padding Oracle Vulnerability (CTX240139)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 https://{host}:{port}/vpn/index.html",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "citrix",
+      "netscaler"
+    ],
+    "version_patterns": [
+      "NetScaler[/ ]([0-9]+\\.[0-9.]+)",
+      "netscaler[/ ]([0-9]+\\.[0-9.]+)",
+      "Citrix[/ ]([0-9]+\\.[0-9.]+)",
+      "citrix[/ ]([0-9]+\\.[0-9.]+)"
+    ]
+  },
+  "analyst_note": "Citrix version may appear in the management interface or SSL certificate. CVEs: CVE-2019-6485.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2019-6485",
+    "https://support.citrix.com/article/CTX240139"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

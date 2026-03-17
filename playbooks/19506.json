@@ -1,0 +1,15 @@
+{
+  "plugin_id": 19506,
+  "finding_name": "Nessus Scan Information",
+  "service": null,
+  "port_logic": "use_scan_port",
+  "command_template": "echo 'define validation command for {host}:{port}'",
+  "timeout_seconds": 30,
+  "validated_if": [],
+  "not_validated_if": [],
+  "inconclusive_if": [],
+  "failure_reason_map": {},
+  "references": [],
+  "reviewed_by": null,
+  "last_verified": null
+}

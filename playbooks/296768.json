@@ -1,0 +1,50 @@
+{
+  "plugin_id": 296768,
+  "finding_name": "OpenSSL 3.5.0 < 3.5.5 Multiple Vulnerabilities",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "nmap -Pn -sV --version-light -p {port} {host}",
+  "timeout_seconds": 45,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {
+    "product_terms": [
+      "openssl"
+    ],
+    "version_patterns": [
+      "openssl/([0-9][0-9a-zA-Z._-]*)",
+      "reported version\\s*:\\s*([0-9][0-9a-zA-Z._-]*)"
+    ],
+    "affected_lt": "3.5.5",
+    "fixed_version": "3.5.5"
+  },
+  "validated_if": [],
+  "validated_if_absent": [],
+  "not_validated_if": [],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "operation not permitted"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "host_down",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "operation not permitted": "inconclusive"
+  },
+  "references": [
+    "https://nmap.org/book/man-version-detection.html"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16",
+  "fallback_commands_json": [
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ]
+}

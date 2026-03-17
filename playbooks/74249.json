@@ -1,0 +1,68 @@
+{
+  "plugin_id": 74249,
+  "finding_name": "Apache Tomcat 8.0.0-RC1 < 8.0.8",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/",
+    "curl -k -s -m 20 https://{host}:{port}/nessus_version_check",
+    "curl -k -s -m 20 http://{host}:{port}/nessus_version_check",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "tomcat",
+      "apache tomcat"
+    ],
+    "version_patterns": [
+      "Apache Tomcat/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "apache tomcat/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "Tomcat/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "tomcat/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "http-server-header: apache-coyote",
+      "http-title: apache tomcat/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "http-title: apache tomcat - error report",
+      "http-server-header: apache-coyote/([0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "8.0.8",
+    "fixed_version": "8.0.8"
+  },
+  "analyst_note": "Apache Tomcat version appears in default error/welcome pages and optionally the Server header. Fixed: 8.0.8. CVEs: CVE-2014-0119.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2014-0119",
+    "https://svn.apache.org/viewvc?view=rev&rev=1588193",
+    "https://svn.apache.org/viewvc?view=rev&rev=1589837",
+    "https://svn.apache.org/viewvc?view=rev&rev=1589980"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

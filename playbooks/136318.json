@@ -1,0 +1,97 @@
+{
+  "plugin_id": 136318,
+  "finding_name": "TLS Version 1.2 Protocol Detection",
+  "service": "tls",
+  "port_logic": "use_scan_port",
+  "command_template": "sslscan --no-colour --tls12 {sslscan_starttls_args} {host}:{port}",
+  "timeout_seconds": 30,
+  "allowed_ports": [
+    443,
+    465,
+    563,
+    636,
+    853,
+    989,
+    990,
+    992,
+    993,
+    994,
+    995,
+    1311,
+    2083,
+    2087,
+    2096,
+    2376,
+    3269,
+    3389,
+    5061,
+    5349,
+    5432,
+    5986,
+    6443,
+    6514,
+    6697,
+    8172,
+    8443,
+    8531,
+    8883,
+    9200,
+    9443,
+    10443
+  ],
+  "blocked_ports": [],
+  "starttls_protocol_map": {
+    "21": "ftp",
+    "25": "smtp",
+    "110": "pop3",
+    "143": "imap",
+    "389": "ldap",
+    "5222": "xmpp",
+    "5269": "xmpp-server",
+    "5432": "postgres",
+    "587": "smtp"
+  },
+  "fallback_commands": [
+    "nmap -Pn --script ssl-enum-ciphers -p {port} {host}",
+    "openssl s_client -connect {host}:{port} {openssl_tls_args} -tls1_2 -brief </dev/null 2>&1"
+  ],
+  "validated_if": [
+    "tlsv1.2",
+    "protocol version: tlsv1.2",
+    "ciphersuite:"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "unsupported protocol",
+    "tlsv1 alert protocol version",
+    "handshake failure"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "no route to host",
+    "no peer certificate available",
+    "temporary failure in name resolution",
+    "bio_lookup_ex:system lib",
+    "could not open a socket",
+    "operation not permitted",
+    "cannot create af_netlink socket"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "no route to host": "host_down",
+    "no peer certificate available": "inconclusive",
+    "temporary failure in name resolution": "host_down",
+    "bio_lookup_ex:system lib": "host_down",
+    "could not open a socket": "inconclusive",
+    "operation not permitted": "inconclusive",
+    "cannot create af_netlink socket": "inconclusive"
+  },
+  "references": [
+    "https://docs.openssl.org/3.6/man1/openssl-s_client/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

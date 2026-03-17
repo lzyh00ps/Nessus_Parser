@@ -1,0 +1,67 @@
+{
+  "plugin_id": 183026,
+  "finding_name": "Citrix NetScaler ADC / Gateway Sensitive Information Disclosure (Citrix Bleed / CVE-2023-4966)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/oauth/idp/.well-known/openid-configuration",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I https://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "Citrix",
+    "NetScaler",
+    "CitrixAGBasic",
+    "NSC_",
+    "Set-Cookie: NSC_"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "citrix",
+      "netscaler"
+    ],
+    "version_patterns": [
+      "NetScaler[/ ]([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "Citrix[^0-9]*([0-9]+\\.[0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "13.1-49.15",
+    "fixed_version": "13.1-49.15 / 13.0-92.19 / 12.1-55.300"
+  },
+  "analyst_note": "CVE-2023-4966 (Citrix Bleed): Buffer over-read in NetScaler ADC and NetScaler Gateway allows unauthenticated session token hijacking. CVSS 9.4. Massively exploited in 2023/2024 by LockBit, ALPHV, and other ransomware groups. NSC_ cookies in response headers are a definitive Citrix NetScaler indicator. If NSC_ cookie is present, treat as high-priority \u2014 extract session tokens via the PoC tool and verify patch level. The /oauth/idp/ endpoint is only present when configured as IdP. Fixed: NetScaler ADC/Gateway 14.1-8.50, 13.1-49.15, 13.0-92.19, 12.1-55.300.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2023-4966",
+    "https://support.citrix.com/article/CTX579459/netscaler-adc-and-netscaler-gateway-security-bulletin-for-cve20234966-and-cve20234967",
+    "https://github.com/ly4k/CitrixBleed",
+    "https://attackerkb.com/topics/zFCiSb60UB/cve-2023-4966",
+    "https://www.assetnote.io/resources/research/citrix-bleed-leaking-session-tokens-with-cve-2023-4966"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

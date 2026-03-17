@@ -1,0 +1,88 @@
+{
+  "plugin_id": 56984,
+  "finding_name": "SSL / TLS Versions Supported",
+  "service": "tls",
+  "port_logic": "use_scan_port",
+  "command_template": "openssl s_client -connect {host}:{port} {openssl_tls_args} -brief </dev/null",
+  "timeout_seconds": 30,
+  "allowed_ports": [
+    25,
+    110,
+    143,
+    389,
+    443,
+    465,
+    563,
+    587,
+    636,
+    853,
+    989,
+    990,
+    992,
+    993,
+    994,
+    995,
+    1311,
+    2083,
+    2087,
+    2096,
+    2376,
+    3269,
+    3389,
+    5061,
+    5349,
+    5432,
+    5986,
+    6443,
+    6514,
+    6697,
+    8172,
+    8443,
+    8531,
+    8883,
+    9200,
+    9443,
+    10443
+  ],
+  "blocked_ports": [],
+  "starttls_protocol_map": {
+    "21": "ftp",
+    "25": "smtp",
+    "110": "pop3",
+    "143": "imap",
+    "389": "ldap",
+    "5222": "xmpp",
+    "5269": "xmpp-server",
+    "5432": "postgres",
+    "587": "smtp"
+  },
+  "validated_if": [
+    "connection established",
+    "protocol version:"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "unsupported protocol",
+    "handshake failure"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "no route to host",
+    "temporary failure in name resolution",
+    "bio_lookup_ex:system lib"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "no route to host": "host_down",
+    "temporary failure in name resolution": "host_down",
+    "bio_lookup_ex:system lib": "host_down"
+  },
+  "references": [
+    "https://docs.openssl.org/3.6/man1/openssl-s_client/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

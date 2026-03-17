@@ -1,0 +1,68 @@
+{
+  "plugin_id": 117615,
+  "finding_name": "Apache Hadoop YARN ResourceManager Unauthenticated Remote Code Execution",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -s -m 20 http://{host}:{port}/ws/v1/cluster/info",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 https://{host}:{port}/ws/v1/cluster/info",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "hadoopVersion",
+    "Hadoop",
+    "YARN",
+    "ResourceManager"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "401 Unauthorized",
+    "403 Forbidden"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable",
+    "401 Unauthorized": "auth_required",
+    "403 Forbidden": "auth_required"
+  },
+  "version_rule": {
+    "product_terms": [
+      "hadoop",
+      "yarn"
+    ],
+    "version_patterns": [
+      "\"hadoopVersion\":\"([0-9]+\\.[0-9]+\\.[0-9]+)\"",
+      "Hadoop[/ ]([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "2.9.2",
+    "fixed_version": "2.9.2 / 3.0.3 / 3.1.1"
+  },
+  "analyst_note": "Apache Hadoop YARN ResourceManager REST API (port 8088) is unauthenticated by default. The /ws/v1/cluster/apps endpoint accepts application submission \u2014 attackers submit MapReduce jobs to execute OS commands. The /ws/v1/cluster/info endpoint returns the Hadoop version. If the endpoint responds with JSON containing 'hadoopVersion', the YARN API is exposed without authentication. This is a critical finding \u2014 internet-exposed YARN clusters are actively exploited by cryptomining malware. Fix: enable Kerberos authentication and restrict access to 8088/8090 via firewall.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2018-8029",
+    "https://hadoop.apache.org/cves.html",
+    "https://github.com/vulhub/vulhub/tree/master/hadoop/unauthorized-yarn",
+    "https://www.exploit-db.com/exploits/45400"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

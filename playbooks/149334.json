@@ -1,0 +1,67 @@
+{
+  "plugin_id": 149334,
+  "finding_name": "Microsoft Exchange Server ProxyLogon Remote Code Execution (CVE-2021-26855 / CVE-2021-27065)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/owa/auth/logon.aspx",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I https://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "Microsoft-IIS",
+    "X-MS-Diagnostics",
+    "X-OWA-Version",
+    "X-FEServer",
+    "OWA"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "exchange",
+      "microsoft exchange"
+    ],
+    "version_patterns": [
+      "X-OWA-Version: ([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "X-MS-Diagnostics: [^0-9]*([0-9]+\\.[0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "15.2.792.15",
+    "fixed_version": "Exchange 2019 CU9 / Exchange 2016 CU20 / Exchange 2013 CU23"
+  },
+  "analyst_note": "CVE-2021-26855 (ProxyLogon SSRF) + CVE-2021-27065 (post-auth arbitrary file write): Chained pre-auth RCE in Microsoft Exchange. CVSS 9.8. Exploited by HAFNIUM (Chinese state-sponsored APT). The X-OWA-Version header is a reliable indicator of Exchange version. Exchange version mapping: 15.2.792.x = Exchange 2019 CU8 (vulnerable). /owa/auth/logon.aspx is the OWA login path. If OWA headers are present, check X-OWA-Version against the fixed version list. Also check for CVE-2021-34473 (ProxyShell) which has a similar fingerprint.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2021-26855",
+    "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2021-26855",
+    "https://github.com/hausec/ProxyLogon",
+    "https://github.com/nickvdyck/proxylogon",
+    "https://www.microsoft.com/en-us/security/blog/2021/03/02/hafnium-targeting-exchange-servers/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

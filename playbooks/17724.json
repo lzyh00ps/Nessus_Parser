@@ -1,0 +1,55 @@
+{
+  "plugin_id": 17724,
+  "finding_name": "Sendmail < 8.13.8 Header Processing Overflow DoS",
+  "service": "banner",
+  "port_logic": "any",
+  "command_template": "nmap -Pn -sV -p {port} {host}",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "nmap -Pn --script smtp-ntlm-info,banner -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "network is unreachable"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "sendmail"
+    ],
+    "version_patterns": [
+      "Sendmail ([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "sendmail ([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "sendmail/([0-9]+\\.[0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "8.13.8",
+    "fixed_version": "8.13.8"
+  },
+  "analyst_note": "Sendmail version in SMTP banner. Fixed: 8.13.8. CVEs: CVE-2006-4434.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2006-4434",
+    "http://www.sendmail.org/releases/8.13.8.php"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

@@ -1,0 +1,56 @@
+{
+  "plugin_id": 11213,
+  "finding_name": "HTTP TRACE / TRACK Methods Allowed",
+  "service": "https",
+  "port_logic": "use_scan_port",
+  "command_template": "curl -k -i -X TRACE --max-time 15 https://{host}:{port}/",
+  "timeout_seconds": 20,
+  "allowed_ports": [
+    443,
+    444,
+    445,
+    448,
+    449,
+    5443,
+    6443,
+    7443,
+    8443,
+    8843,
+    9443,
+    10443
+  ],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "trace /",
+    "message/http"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "405 method not allowed",
+    "403 forbidden",
+    "501 not implemented"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "could not resolve host"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "could not resolve host": "host_down"
+  },
+  "references": [
+    "https://curl.se/docs/manpage.html"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16",
+  "fallback_commands_json": [
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ]
+}

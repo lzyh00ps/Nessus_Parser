@@ -1,0 +1,56 @@
+{
+  "plugin_id": 38877,
+  "finding_name": "Sendmail < 8.13.2 Mail X-Header Handling Remote Overflow",
+  "service": "banner",
+  "port_logic": "any",
+  "command_template": "nmap -Pn -sV -p {port} {host}",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "nmap -Pn --script smtp-ntlm-info,banner -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "network is unreachable"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "sendmail"
+    ],
+    "version_patterns": [
+      "Sendmail ([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "sendmail ([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "sendmail/([0-9]+\\.[0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "8.13.2",
+    "fixed_version": "8.13.2"
+  },
+  "analyst_note": "Sendmail version in SMTP banner. Fixed: 8.13.2. CVEs: CVE-2009-1490.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2009-1490",
+    "http://www.nmrc.org/~thegnome/blog/apr09/",
+    "http://www.sendmail.org/releases/8.13.2"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

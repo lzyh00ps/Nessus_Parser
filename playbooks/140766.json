@@ -1,0 +1,64 @@
+{
+  "plugin_id": 140766,
+  "finding_name": "Drupal 7.x < 7.73 / 8.8.x < 8.8.10 / 8.9.x < 8.9.6 / 9.0.x < 9.0.6 XSS (drupal-2020-09-16)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/CHANGELOG.txt",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/CHANGELOG.txt",
+    "curl -k -s -m 20 https://{host}:{port}/core/CHANGELOG.txt",
+    "curl -k -s -m 20 http://{host}:{port}/core/CHANGELOG.txt",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "drupal"
+    ],
+    "version_patterns": [
+      "Drupal ([0-9]+\\.[0-9]+(?:\\.[0-9]+)?),",
+      "drupal ([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)",
+      "X-Generator: Drupal ([0-9]+)",
+      "x-generator: drupal ([0-9]+)",
+      "http-generator: drupal ([0-9]+(?:\\.[0-9]+)?)"
+    ],
+    "affected_lt": "7.73",
+    "fixed_version": "7.73"
+  },
+  "analyst_note": "Drupal version visible in /CHANGELOG.txt (if not removed by admin). Fixed: 7.73. CVEs: CVE-2020-13666.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2020-13666",
+    "https://www.drupal.org/sa-core-2020-007",
+    "https://www.drupal.org/project/drupal/releases/7.73",
+    "https://www.drupal.org/project/drupal/releases/8.8.10"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

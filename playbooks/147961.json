@@ -1,0 +1,64 @@
+{
+  "plugin_id": 147961,
+  "finding_name": "SAP NetWeaver AS JAVA Reverse Tabnabbing (2976947)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/sap/public/info",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/sap/public/info",
+    "curl -k -s -m 20 https://{host}:{port}/sap/bc/webdynpro/sap/session_manager",
+    "curl -k -s -m 20 -I https://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "sap",
+      "sap netweaver"
+    ],
+    "version_patterns": [
+      "RFCSI_RELEASE>([0-9]+)<",
+      "<release>([0-9]+)</release>",
+      "SAP NetWeaver[^0-9]*([0-9]+\\.[0-9]+)",
+      "sap netweaver[^0-9]*([0-9]+\\.[0-9]+)",
+      "Server: SAP NetWeaver Application Server[/ ]*([0-9]+\\.[0-9]+)",
+      "server: sap netweaver application server[/ ]*([0-9]+\\.[0-9]+)",
+      "SAP[/ ]([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ]
+  },
+  "analyst_note": "SAP NetWeaver AS \u2014 version via management interfaces or ICM HTTP server. CVEs: CVE-2021-21491.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2021-21491",
+    "https://wiki.scn.sap.com/wiki/pages/viewpage.action?pageId=571343107",
+    "https://launchpad.support.sap.com/#/notes/2976947"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

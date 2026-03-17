@@ -1,0 +1,68 @@
+{
+  "plugin_id": 152864,
+  "finding_name": "Confluence Server/Data Center OGNL Injection Remote Code Execution (CVE-2021-26084)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/login.action",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/login.action",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "Atlassian",
+    "Confluence",
+    "X-Confluence"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake",
+    "404 Not Found"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable",
+    "404 Not Found": "endpoint_not_found"
+  },
+  "version_rule": {
+    "product_terms": [
+      "confluence",
+      "atlassian"
+    ],
+    "version_patterns": [
+      "ajs-version-number[^>]*content=\"([0-9]+\\.[0-9]+\\.[0-9]+)\"",
+      "Confluence[/ ]([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "X-Confluence-Version: ([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "7.13.0",
+    "fixed_version": "7.13.0"
+  },
+  "analyst_note": "CVE-2021-26084: Pre-auth OGNL injection (template injection) in Confluence WebWork. Widepread exploitation within days of disclosure. Affects Confluence Server/DC all versions before 6.13.23 (LTS), 7.4.11 (LTS), 7.11.6, 7.12.5, 7.13.0. Confluence typically runs on port 8090 (default). The login.action page response includes an 'X-Confluence-Version' header or meta tag 'ajs-version-number' in some versions. If Confluence is confirmed but version cannot be determined, escalate for manual verification.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2021-26084",
+    "https://confluence.atlassian.com/doc/confluence-security-advisory-2021-08-25-1077906215.html",
+    "https://github.com/h3v0x/CVE-2021-26084_Confluence",
+    "https://packetstormsecurity.com/files/163959/Confluence-Server-OGNL-Injection.html",
+    "https://www.rapid7.com/db/modules/exploit/multi/http/confluence_ognl_injection/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

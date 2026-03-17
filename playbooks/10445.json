@@ -1,0 +1,43 @@
+{
+  "plugin_id": 10445,
+  "finding_name": "AnalogX Proxy Denial of Service",
+  "service": "banner",
+  "command_template": "sh -c 'out=$(nmap -Pn -sV --version-light -p {port} {host} 2>&1); printf \"%s\\n\" \"$out\"; curl -k -s -I --max-time 10 http://{host}:{port}/ 2>&1'",
+  "timeout_seconds": 20,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "analogx"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "0 open ports"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "operation not permitted"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "host_down",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "operation not permitted": "inconclusive"
+  },
+  "references": [
+    "https://www.analogx.com/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16",
+  "fallback_commands_json": [
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ]
+}

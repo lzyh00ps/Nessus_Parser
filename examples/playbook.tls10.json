@@ -1,0 +1,32 @@
+{
+  "plugin_id": 104743,
+  "finding_name": "TLS Version 1.0 Protocol Detection",
+  "service": "tls",
+  "port_logic": "use_scan_port",
+  "command_template": "openssl s_client -connect {host}:{port} -tls1 -brief </dev/null",
+  "validated_if": [
+    "Protocol version: TLSv1",
+    "CONNECTION ESTABLISHED"
+  ],
+  "not_validated_if": [
+    "unsupported protocol",
+    "tlsv1 alert protocol version",
+    "handshake failure"
+  ],
+  "inconclusive_if": [
+    "Connection refused",
+    "No route to host",
+    "timed out"
+  ],
+  "failure_reason_map": {
+    "Connection refused": "port_closed",
+    "No route to host": "host_down",
+    "timed out": "port_filtered"
+  },
+  "references": [
+    "https://docs.openssl.org/3.6/man1/openssl-s_client/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}
+

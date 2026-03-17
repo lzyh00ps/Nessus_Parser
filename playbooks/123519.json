@@ -1,0 +1,62 @@
+{
+  "plugin_id": 123519,
+  "finding_name": "Magento < 2.3.1 SQL Injection / Remote Code Execution (CVE-2019-7139)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/magento_version",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/magento_version",
+    "curl -k -s -m 20 -I https://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake",
+    "404 Not Found"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable",
+    "404 Not Found": "endpoint_not_found"
+  },
+  "version_rule": {
+    "product_terms": [
+      "magento"
+    ],
+    "version_patterns": [
+      "Magento/([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "^([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "2.3.1",
+    "fixed_version": "2.3.1"
+  },
+  "analyst_note": "CVE-2019-7139: SQL injection vulnerability in Magento < 2.3.1 (also affects 1.x). The /magento_version endpoint returns the Magento version string on some configurations (e.g., '2.2.7'). If 404, check X-Magento-Tags or X-Cache headers for Magento indicators. Magento 1.x reached EOL June 2020 and remains unpatched \u2014 treat all Magento 1.x as vulnerable. The Magicento exploits and card-skimming attacks (Magecart) heavily target this platform.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2019-7139",
+    "https://magento.com/security/patches/magento-2.3.1-2.2.8-and-2.1.17-security-update",
+    "https://github.com/ambionics/magento-exploits",
+    "https://www.exploit-db.com/exploits/46559"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

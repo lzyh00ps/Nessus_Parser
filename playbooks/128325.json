@@ -1,0 +1,69 @@
+{
+  "plugin_id": 128325,
+  "finding_name": "Cisco IOS XE REST API Authentication Bypass (CVE-2019-12643)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/api/v1/global/local-users",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I https://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "Cisco",
+    "IOS-XE",
+    "IOS XE"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [
+    "401 Unauthorized",
+    "403 Forbidden"
+  ],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable",
+    "401 Unauthorized": "auth_required",
+    "403 Forbidden": "auth_required"
+  },
+  "version_rule": {
+    "product_terms": [
+      "cisco",
+      "ios xe",
+      "ios-xe"
+    ],
+    "version_patterns": [
+      "Cisco IOS XE[^0-9]*([0-9]+\\.[0-9]+\\.[0-9a-zA-Z.]+)",
+      "IOS[- ]XE[^0-9]*([0-9]+\\.[0-9]+[a-zA-Z0-9.]*)"
+    ],
+    "affected_lt": "16.12.1",
+    "fixed_version": "16.12.1"
+  },
+  "analyst_note": "CVE-2019-12643: Authentication bypass in Cisco IOS XE REST API virtual service container. If the REST API returns 200 OK without authentication on /api/v1/ endpoints, this confirms vulnerability. The virtual service container hosting the REST API must be installed and active. Cisco IOS XE HTTP server responds on 443 or 80 with Cisco-specific headers. If 401/403 is returned, the authentication is working. Fixed: IOS XE 16.12.1. Note: Cisco also released a similar critical vulnerability in 2023 (CVE-2023-20198) \u2014 check for that as well.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2019-12643",
+    "https://tools.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-20190925-rest-api",
+    "https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/linux/http/cisco_ios_xe_rest_auth_bypass.rb"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

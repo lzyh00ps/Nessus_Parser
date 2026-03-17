@@ -1,0 +1,52 @@
+{
+  "plugin_id": 138554,
+  "finding_name": "Windows DNS Server SIGRed Remote Code Execution (CVE-2020-1350)",
+  "service": "dns",
+  "port_logic": "any",
+  "command_template": "dig @{host} version.bind chaos txt",
+  "timeout_seconds": 15,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "nmap -Pn -sV -p 53 --script dns-nsid {host}",
+    "dig @{host} . NS"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [
+    "BIND",
+    "unbound",
+    "PowerDNS",
+    "dnsmasq",
+    "NSD"
+  ],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "no servers could be reached",
+    "timed out",
+    "connection refused",
+    "network is unreachable",
+    "no route to host",
+    "REFUSED",
+    "NXDOMAIN"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "no servers could be reached": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {},
+  "analyst_note": "CVE-2020-1350 (SIGRed): Critical CVSS 10.0 wormable RCE in Windows DNS Server. Affects Windows Server 2003\u20132019 running DNS role. The version.bind query will return 'Microsoft DNS' on Windows DNS servers; Linux-based DNS servers will return their version string and should be considered not vulnerable. If 'Microsoft DNS' is detected, treat as inconclusive (version not determinable remotely) and escalate for patch verification via authenticated means. This vulnerability is in DNS packet processing (SIG resource record parsing) and requires no user interaction.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2020-1350",
+    "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2020-1350",
+    "https://research.checkpoint.com/2020/resolving-your-way-into-domain-admin-sigred-explained/",
+    "https://github.com/tinkersec/cve-2020-1350"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

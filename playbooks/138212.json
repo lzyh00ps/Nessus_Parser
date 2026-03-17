@@ -1,0 +1,62 @@
+{
+  "plugin_id": 138212,
+  "finding_name": "Citrix ADC and NetScaler Gateway Multiple Vulnerabilities (CTX276688)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "Citrix",
+    "NetScaler",
+    "NSC_",
+    "CitrixAGBasic"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "citrix",
+      "netscaler"
+    ],
+    "version_patterns": [
+      "NetScaler[/ ]([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "Citrix[^0-9]*([0-9]+\\.[0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "10.5.70.18",
+    "fixed_version": "10.5.70.18 / 11.1.65.20 / 12.0.64.35 / 12.1.58.15 / 13.0.58.30"
+  },
+  "analyst_note": "Citrix ADC/NetScaler Gateway CTX276688 advisory (July 2020) covering 11 CVEs including information disclosure, XSS, and authorization bypass. NSC_ cookies in response headers are a definitive Citrix indicator. Fixed: 10.5.70.18, 11.1.65.20, 12.0.64.35, 12.1.58.15, 13.0.58.30.",
+  "references": [
+    "https://support.citrix.com/article/CTX276688",
+    "https://nvd.nist.gov/vuln/detail/CVE-2020-8195"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

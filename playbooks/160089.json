@@ -1,0 +1,64 @@
+{
+  "plugin_id": 160089,
+  "finding_name": "Cisco Wireless LAN Controller Authentication Bypass (CVE-2022-20695)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "Cisco",
+    "WLC",
+    "Wireless LAN Controller",
+    "CISCO_WLC"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "cisco",
+      "wlc",
+      "wireless lan controller"
+    ],
+    "version_patterns": [
+      "Cisco[^0-9]*([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "WLC[^0-9]*([0-9]+\\.[0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "8.10.162.0",
+    "fixed_version": "8.10.162.0"
+  },
+  "analyst_note": "CVE-2022-20695: Authentication bypass in Cisco Wireless LAN Controller (WLC) management interface when RADIUS MAC authentication is enabled with a specific security configuration. CVSS 9.8. Affects Cisco WLC AireOS Software. If Cisco WLC management interface is internet-facing, this is a critical priority. Verify by checking if RADIUS MAC authentication with PAP is configured. Fixed: 8.10.162.0 for AireOS-based WLCs. Note: Cisco Catalyst 9800 series (IOS-XE based) are not affected.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2022-20695",
+    "https://tools.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-wlc-auth-bypass-JRNhV4fF",
+    "https://attackerkb.com/topics/IHsgZDE3tS/cve-2022-20695"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

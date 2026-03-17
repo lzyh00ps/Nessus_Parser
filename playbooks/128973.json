@@ -1,0 +1,57 @@
+{
+  "plugin_id": 128973,
+  "finding_name": "MariaDB 10.2.0 < 10.2.22 Multiple Vulnerabilities",
+  "service": "banner",
+  "port_logic": "any",
+  "command_template": "nmap -Pn -sV -p {port} {host}",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "nmap -Pn --script mysql-info -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "network is unreachable"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "mariadb"
+    ],
+    "version_patterns": [
+      "MariaDB[^0-9]*([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "([0-9]+\\.[0-9]+\\.[0-9]+-MariaDB)",
+      "mariadb ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "([0-9]+\\.[0-9]+\\.[0-9]+)-mariadb",
+      "mysql-info: ([0-9]+\\.[0-9]+\\.[0-9]+)-mariadb"
+    ],
+    "affected_lt": "10.2.22",
+    "fixed_version": "10.2.22"
+  },
+  "analyst_note": "MariaDB version is visible in the connection banner on port 3306. Fixed: 10.2.22. CVEs: CVE-2019-2510, CVE-2019-2537.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2019-2510",
+    "http://www.nessus.org/u?c0c89b7d"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

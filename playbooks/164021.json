@@ -1,0 +1,66 @@
+{
+  "plugin_id": 164021,
+  "finding_name": "Atlassian Confluence Server OGNL Injection Pre-Authentication RCE (CVE-2022-26134)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/login.action",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/login.action",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "Atlassian",
+    "Confluence",
+    "X-Confluence"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "confluence",
+      "atlassian"
+    ],
+    "version_patterns": [
+      "ajs-version-number[^>]*content=\"([0-9]+\\.[0-9]+\\.[0-9]+)\"",
+      "X-Confluence-Version: ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "Confluence[/ ]([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "7.18.1",
+    "fixed_version": "7.4.17 / 7.13.7 / 7.14.3 / 7.15.2 / 7.16.4 / 7.17.4 / 7.18.1"
+  },
+  "analyst_note": "CVE-2022-26134: CVSS 9.8 OGNL injection in Confluence Server and Data Center \u2014 zero-day exploited before patch release. All supported versions before 7.18.1 are affected; Atlassian Cloud is NOT affected. This was actively exploited by multiple threat actors immediately after disclosure. If Confluence is detected via headers (Atlassian, X-Confluence-*), treat as high-priority. The X-Confluence-Version header (visible in some configurations) enables version-based triage. WAF mitigation available (block ${, #{, %-encoded variants in paths).",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2022-26134",
+    "https://confluence.atlassian.com/doc/confluence-security-advisory-2022-06-02-1130377146.html",
+    "https://github.com/shamo0/CVE-2022-26134",
+    "https://github.com/jbaines-r7/through_the_wire",
+    "https://attackerkb.com/topics/BnVEu2vHOo/cve-2022-26134"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

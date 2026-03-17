@@ -1,0 +1,57 @@
+{
+  "plugin_id": 178032,
+  "finding_name": "ManageEngine ADManager Plus < Build 7183 XXE",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I https://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "manageengine"
+    ],
+    "version_patterns": [
+      "ManageEngine[^0-9]*([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)",
+      "manageengine[^0-9]*([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)",
+      "build ([0-9]{4,6})"
+    ]
+  },
+  "analyst_note": "ManageEngine product version in web login page or footer. CVEs: CVE-2023-35786.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2023-35786",
+    "http://www.nessus.org/u?db0c288a",
+    "http://www.nessus.org/u?c28db32b"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

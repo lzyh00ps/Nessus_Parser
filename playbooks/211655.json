@@ -1,0 +1,54 @@
+{
+  "plugin_id": 211655,
+  "finding_name": "PostgreSQL 12.x < 12.21 / 13.x < 13.17 / 14.x < 14.14 / 15.x < 15.9 / 16.x < 16.5 / 17.x < 17.1 Multiple Vulnerabilities",
+  "service": "banner",
+  "port_logic": "any",
+  "command_template": "nmap -Pn -sV -p {port} {host}",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "nmap -Pn --script pgsql-info -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "network is unreachable"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "postgresql"
+    ],
+    "version_patterns": [
+      "PostgreSQL ([0-9]+\\.[0-9]+)",
+      "PostgreSQL[^0-9]*([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "12.21",
+    "fixed_version": "12.21 / 13.17 / 14.14 / 15.9 / 16.5 / 17.1"
+  },
+  "analyst_note": "PostgreSQL multiple vulnerabilities across active versions. nmap -sV detects PostgreSQL version from the service banner on port 5432. PostgreSQL should not be directly internet-accessible \u2014 if it is, document as a critical network segmentation finding. The version number from nmap may be in 'X.Y' format (major.minor) for PostgreSQL 10+. Fixed: 12.21, 13.17, 14.14, 15.9, 16.5, 17.1.",
+  "references": [
+    "https://www.postgresql.org/support/security/",
+    "https://nvd.nist.gov/vuln/detail/CVE-2024-10978"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

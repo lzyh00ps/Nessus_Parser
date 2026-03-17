@@ -1,0 +1,64 @@
+{
+  "plugin_id": 117639,
+  "finding_name": "ManageEngine Desktop Central 10 < Build 100282 Remote Privilege Escalation",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I http://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "ManageEngine",
+    "Desktop Central",
+    "ZOHO",
+    "DesktopCentral"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "manageengine",
+      "desktop central"
+    ],
+    "version_patterns": [
+      "Build[^0-9]*([0-9]+)",
+      "ManageEngine[^0-9]*([0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "100282",
+    "fixed_version": "Build 100282"
+  },
+  "analyst_note": "ManageEngine Desktop Central 10 < Build 100282 remote privilege escalation allowing unauthenticated users to gain admin access. Desktop Central manages enterprise endpoints and has full RDP/remote shell capabilities. Default ports are 8020 (HTTP) and 8383 (HTTPS). If ManageEngine indicators are present, escalate immediately. Fixed: Build 100282.",
+  "references": [
+    "https://www.manageengine.com/products/desktop-central/CVE-2018-19921.html",
+    "https://nvd.nist.gov/vuln/detail/CVE-2018-19921",
+    "https://www.exploit-db.com/exploits/46025"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

@@ -1,0 +1,64 @@
+{
+  "plugin_id": 170064,
+  "finding_name": "GitLab 11.3 < 15.4.6 / 15.5 < 15.5.5 / 15.6 < 15.6.1 (CVE-2022-3482)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/api/v4/version",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/api/v4/version",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake",
+    "401 unauthorized",
+    "403 forbidden"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable",
+    "401 unauthorized": "auth_required",
+    "403 forbidden": "auth_required"
+  },
+  "version_rule": {
+    "product_terms": [
+      "gitlab"
+    ],
+    "version_patterns": [
+      "\"version\":\"([0-9]+\\.[0-9]+\\.[0-9]+)\"",
+      "gitlab[/ ]([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "http-generator: gitlab ([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "15.4.6",
+    "fixed_version": "15.4.6"
+  },
+  "analyst_note": "GitLab version exposed via /api/v4/version JSON endpoint (may require auth on newer instances). Fixed: 15.4.6. CVEs: CVE-2022-3482.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2022-3482",
+    "http://www.nessus.org/u?0e7db46e",
+    "https://gitlab.com/gitlab-org/gitlab/-/issues/377802",
+    "https://hackerone.com/reports/1725841"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

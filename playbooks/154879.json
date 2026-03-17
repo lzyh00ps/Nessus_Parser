@@ -1,0 +1,64 @@
+{
+  "plugin_id": 154879,
+  "finding_name": "GitLab CE/EE < 13.8.8 / < 13.9.6 / < 13.10.3 Remote Code Execution (CVE-2021-22205)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/api/v4/version",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/api/v4/version",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "ssl handshake",
+    "401 Unauthorized",
+    "403 Forbidden",
+    "404 Not Found"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "401 Unauthorized": "auth_required",
+    "403 Forbidden": "auth_required",
+    "404 Not Found": "endpoint_not_found"
+  },
+  "version_rule": {
+    "product_terms": [
+      "gitlab"
+    ],
+    "version_patterns": [
+      "\"version\":\"([0-9]+\\.[0-9]+\\.[0-9]+)\"",
+      "GitLab/([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "13.10.3",
+    "fixed_version": "13.10.3"
+  },
+  "analyst_note": "CVE-2021-22205: Unauthenticated RCE via ExifTool image upload parsing. Affects GitLab CE/EE 11.9+. Fixed in 13.10.3, 13.9.6, 13.8.8. The /api/v4/version endpoint is unauthenticated only on public instances or with a valid token. If 401 is returned, version cannot be determined — treat as inconclusive. Public exploits weaponize ExifTool DjVu file parsing.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2021-22205",
+    "https://about.gitlab.com/releases/2021/04/14/security-release-gitlab-13-10-3-released/",
+    "https://github.com/CsEnox/Gitlab-Exiftool-RCE",
+    "https://attackerkb.com/topics/D41jRULCBZ/cve-2021-22205",
+    "https://packetstormsecurity.com/files/164768/GitLab-Unauthenticated-Remote-Code-Execution.html"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

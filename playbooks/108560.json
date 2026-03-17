@@ -1,0 +1,62 @@
+{
+  "plugin_id": 108560,
+  "finding_name": "Webmin 1.850 Multiple Vulnerabilities",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "Webmin",
+    "MiniServ"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "webmin",
+      "miniserv"
+    ],
+    "version_patterns": [
+      "MiniServ/([0-9]+\\.[0-9.]+)",
+      "Webmin/([0-9]+\\.[0-9.]+)",
+      "server: miniserv/([0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "1.860",
+    "fixed_version": "1.860"
+  },
+  "analyst_note": "Webmin 1.850 multiple vulnerabilities including CSRF leading to RCE, path traversal, and XSS. Webmin runs on port 10000 (default) and exposes its version in the 'Server: MiniServ/1.850' HTTP response header \u2014 reliable version detection. Webmin should never be internet-facing. If MiniServ header is present, treat as validated pending version check. Fixed: 1.860.",
+  "references": [
+    "https://www.webmin.com/security.html",
+    "https://nvd.nist.gov/vuln/detail/CVE-2018-19191",
+    "https://github.com/roughiz/Webmin-1.910-Exploit-Script"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

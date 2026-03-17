@@ -1,0 +1,49 @@
+{
+  "plugin_id": 78067,
+  "finding_name": "Bash Remote Code Execution via Environment Variable Injection (Shellshock / CVE-2014-6271 / CVE-2014-6277 / CVE-2014-6278)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/cgi-bin/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I http://{host}:{port}/cgi-bin/",
+    "nmap -Pn -sV --version-light --script http-shellshock -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {},
+  "analyst_note": "CVE-2014-6271 / CVE-2014-6277 / CVE-2014-6278 (Shellshock): Remote code execution via crafted environment variables in Bash < 4.3 patch 25. Exploitable through CGI scripts, SSH ForceCommand, DHCP clients, and other bash-invocation vectors. The nmap http-shellshock script uses a safe echo test: 'Cookie: () { :;}; echo; echo shellshock'. If /cgi-bin/ is accessible, recommend the nmap script as a safe PoC test. This affects any server running CGI scripts via bash. Fixed: Bash 4.3 patch 25 (OS vendor patches required \u2014 check distro security advisories).",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2014-6271",
+    "https://nvd.nist.gov/vuln/detail/CVE-2014-6277",
+    "https://nvd.nist.gov/vuln/detail/CVE-2014-6278",
+    "https://nmap.org/nsedoc/scripts/http-shellshock.html",
+    "https://www.exploit-db.com/exploits/34765"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

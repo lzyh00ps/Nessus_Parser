@@ -1,0 +1,58 @@
+{
+  "plugin_id": 175388,
+  "finding_name": "Mattermost Server < 7.1.6 / 7.2.x < 7.7.2 Information Disclosure (MMSA-2023-00138)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/api/v4/system/ping",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/api/v4/system/ping",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "mattermost"
+    ],
+    "version_patterns": [
+      "\"version\":\"([0-9]+\\.[0-9]+\\.[0-9]+)\"",
+      "Mattermost[/ ]([0-9]+\\.[0-9.]+)",
+      "mattermost[/ ]([0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "7.1.6",
+    "fixed_version": "7.1.6"
+  },
+  "analyst_note": "Mattermost version via /api/v4/system/ping JSON endpoint. Fixed: 7.1.6. CVEs: CVE-2023-1775.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2023-1775",
+    "https://mattermost.com/security-updates/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

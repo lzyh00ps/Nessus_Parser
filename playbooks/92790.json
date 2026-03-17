@@ -1,0 +1,61 @@
+{
+  "plugin_id": 92790,
+  "finding_name": "Splunk Enterprise < 5.0.16 / 6.0.12 / 6.1.11 / 6.2.11 / 6.3.6 / 6.4.2 Multiple Vulnerabilities",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/services/server/info?output_mode=json",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/services/server/info?output_mode=json",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "401 Unauthorized",
+    "403 Forbidden",
+    "could not connect",
+    "network is unreachable"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "401 Unauthorized": "auth_required",
+    "403 Forbidden": "auth_required",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "splunk"
+    ],
+    "version_patterns": [
+      "\"version\":\"([0-9]+\\.[0-9]+\\.[0-9]+)\"",
+      "Splunk[/ ]([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "http-server-header: splunk[/ ]([0-9]+\\.[0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "6.4.2",
+    "fixed_version": "6.4.2"
+  },
+  "analyst_note": "Splunk Enterprise multiple vulnerabilities including XSS, CSRF, and code execution. Port 8089 is the Splunk management REST API (may not require auth on older versions). Port 8000 is the web UI. The /services/server/info endpoint returns JSON with version. Fixed: 5.0.16, 6.0.12, 6.1.11, 6.2.11, 6.3.6, 6.4.2.",
+  "references": [
+    "https://www.splunk.com/en_us/product-security/announcements.html",
+    "https://nvd.nist.gov/vuln/detail/CVE-2016-4858"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

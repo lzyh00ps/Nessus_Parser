@@ -1,0 +1,41 @@
+{
+  "plugin_id": 51892,
+  "finding_name": "openssl_resume_different_cipher",
+  "service": "tls",
+  "port_logic": "use_scan_port",
+  "command_template": "openssl s_client -connect {host}:{port} {openssl_tls_args} -brief </dev/null",
+  "timeout_seconds": 30,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {
+    "21": "ftp",
+    "25": "smtp",
+    "110": "pop3",
+    "143": "imap",
+    "389": "ldap",
+    "5222": "xmpp",
+    "5269": "xmpp-server",
+    "5432": "postgres",
+    "587": "smtp"
+  },
+  "validated_if": [],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "unsupported protocol",
+    "handshake failure"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "no route to host"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "no route to host": "host_down"
+  },
+  "references": [],
+  "reviewed_by": null,
+  "last_verified": null
+}

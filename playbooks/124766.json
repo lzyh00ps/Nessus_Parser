@@ -1,0 +1,67 @@
+{
+  "plugin_id": 124766,
+  "finding_name": "Pulse Connect Secure Multiple Vulnerabilities (SA44101 / CVE-2019-11510 / CVE-2019-11508 / CVE-2019-11538)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/dana-na/auth/url_default/welcome.cgi",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I https://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "Pulse Secure",
+    "PulseSecure",
+    "dana-na",
+    "DSSignInURL",
+    "DSID="
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "pulse",
+      "juniper"
+    ],
+    "version_patterns": [
+      "Pulse[^0-9]*([0-9]+\\.[0-9]+[A-Za-z0-9._-]*)",
+      "X-Pulse-Version: ([0-9]+\\.[0-9]+[A-Za-z0-9._-]*)"
+    ],
+    "affected_lt": "9.0R3.4",
+    "fixed_version": "9.0R3.4 / 8.3R7.1 / 8.2R12.1 / 8.1R15.1"
+  },
+  "analyst_note": "SA44101: Pulse Secure advisory covering CVE-2019-11510 (arbitrary file read), CVE-2019-11508 (heap overflow in NFS), and CVE-2019-11538 (arbitrary file write). The /dana-na/ directory and DSID cookie are definitive Pulse Secure indicators. CVE-2019-11510 allows reading /etc/passwd and session files with cleartext VPN credentials \u2014 NSA alert AA20-010A confirms active nation-state exploitation. If Pulse Secure is detected, treat as critical \u2014 apply patches or isolate immediately.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2019-11510",
+    "https://kb.pulsesecure.net/articles/Pulse_Security_Advisories/SA44101",
+    "https://github.com/projectzeroindia/CVE-2019-11510",
+    "https://www.exploit-db.com/exploits/47297",
+    "https://media.defense.gov/2020/Jan/22/2002237484/-1/-1/0/CSA-MITIGATING-RECENT-NATION-STATE-CYBER-THREATS-20200122.PDF"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

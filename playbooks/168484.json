@@ -1,0 +1,66 @@
+{
+  "plugin_id": 168484,
+  "finding_name": "VMware vCenter Server Multiple Vulnerabilities (CVE-2021-21985 / CVE-2021-22005)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/sdk/vimServiceVersions.xml",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I https://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "VMware",
+    "vCenter",
+    "vcenter"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "vmware",
+      "vcenter"
+    ],
+    "version_patterns": [
+      "<version>([0-9]+\\.[0-9]+\\.[0-9.]+)</version>",
+      "VMware vCenter[^0-9]*([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "vCenter Server ([0-9]+\\.[0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "7.0U3d",
+    "fixed_version": "6.5U3r / 6.7U3t / 7.0U3d"
+  },
+  "analyst_note": "CVE-2021-21985 (CVSS 9.8): RCE via Virtual SAN Health Check plugin enabled by default in vCenter. CVE-2021-22005 (CVSS 9.8): File upload RCE via Analytics service. The /sdk/ path and VMware-specific XML are characteristic of vCenter. vCenter Server typically runs on port 443. The /sdk/vimServiceVersions.xml returns the API version which maps to the vCenter version. If VMware/vCenter indicators are present, escalate immediately \u2014 vCenter is a crown jewel target for ransomware groups.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2021-21985",
+    "https://nvd.nist.gov/vuln/detail/CVE-2021-22005",
+    "https://www.vmware.com/security/advisories/VMSA-2021-0010.html",
+    "https://github.com/horizon3ai/CVE-2021-22005",
+    "https://github.com/alt3kx/CVE-2021-21985_PoC"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

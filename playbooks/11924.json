@@ -1,0 +1,53 @@
+{
+  "plugin_id": 11924,
+  "finding_name": "Monkey HTTP Server POST Denial of Service",
+  "service": "banner",
+  "command_template": "sh -c 'out=$(nmap -Pn -sV --version-light -p {port} {host} 2>&1); printf \"%s\\n\" \"$out\"; curl -k -s -I --max-time 10 http://{host}:{port}/ 2>&1'",
+  "timeout_seconds": 20,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "monkey/0.5",
+    "monkey/0.4",
+    "monkey/0.3",
+    "monkey/0.2",
+    "monkey/0.1"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "monkey/0.9",
+    "monkey/0.6",
+    "monkey/0.7",
+    "monkey/0.8",
+    "monkey/1."
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "operation not permitted",
+    "empty reply from server"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "host_down",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "operation not permitted": "inconclusive",
+    "empty reply from server": "inconclusive"
+  },
+  "references": [
+    "http://monkey-project.com/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16",
+  "fallback_commands_json": [
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ]
+}

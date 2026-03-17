@@ -1,0 +1,61 @@
+{
+  "plugin_id": 194924,
+  "finding_name": "Splunk Enterprise 8.1 < 8.1.13 / 8.2 < 8.2.10 / 9.0 < 9.0.4 Multiple Vulnerabilities",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/services/server/info?output_mode=json",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/services/server/info?output_mode=json",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "401 Unauthorized",
+    "403 Forbidden",
+    "could not connect",
+    "network is unreachable"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "401 Unauthorized": "auth_required",
+    "403 Forbidden": "auth_required",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "splunk"
+    ],
+    "version_patterns": [
+      "\"version\":\"([0-9]+\\.[0-9]+\\.[0-9]+)\"",
+      "Splunk[/ ]([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "http-server-header: splunk[/ ]([0-9]+\\.[0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "8.1.13",
+    "fixed_version": "8.1.13 / 8.2.10 / 9.0.4"
+  },
+  "analyst_note": "Splunk Enterprise SVD-2023-xxxx advisory covering multiple vulnerabilities in versions 8.1.x, 8.2.x, and 9.0.x. The /services/server/info JSON endpoint may be accessible without auth on older Splunk configs (port 8089). If auth is required (401), version cannot be determined remotely \u2014 escalate for internal verification. Fixed: 8.1.13, 8.2.10, 9.0.4.",
+  "references": [
+    "https://www.splunk.com/en_us/product-security/announcements.html",
+    "https://nvd.nist.gov/vuln/detail/CVE-2023-32707"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

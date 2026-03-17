@@ -1,0 +1,61 @@
+{
+  "plugin_id": 55931,
+  "finding_name": "Oracle GlassFish Server Admin Console Authentication Bypass (CVE-2011-0807)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I http://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}",
+    "curl -k -s -m 20 -I https://{host}:{port}/"
+  ],
+  "validated_if": [
+    "GlassFish",
+    "glassfish",
+    "Oracle GlassFish"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "glassfish"
+    ],
+    "version_patterns": [
+      "GlassFish[^v]*v?([0-9]+\\.[0-9.]+)",
+      "Oracle GlassFish Server ([0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "3.1.2",
+    "fixed_version": "3.1.2"
+  },
+  "analyst_note": "CVE-2011-0807: Authentication bypass in Oracle GlassFish Server admin console allows unauthenticated remote access to the administration interface on port 4848. If the Server response header contains 'GlassFish' or the /management/ path is accessible, treat as validated. GlassFish admin port 4848 should never be internet-accessible. Version is typically visible in the Server header (e.g., 'GlassFish v3.1.1'). Fixed in GlassFish 3.1.2.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2011-0807",
+    "https://www.oracle.com/security-alerts/cpuapr2011.html",
+    "https://www.exploit-db.com/exploits/18764"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

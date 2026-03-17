@@ -1,0 +1,38 @@
+{
+  "plugin_id": 35450,
+  "finding_name": "DNS Server Spoofed Request Amplification DDoS",
+  "service": "dns",
+  "port_logic": "use_scan_port",
+  "command_template": "sh -c 'out=$(dig @{host} . NS +notcp +time=5 +tries=1 2>&1); printf \"%s\\n\" \"$out\"; printf \"%s\\n\" \"$out\" | grep -qi \"status: noerror\" && printf \"%s\\n\" \"$out\" | grep -Eqi \"ANSWER: [1-9]\" && echo DNS_AMPLIFICATION_ENABLED || echo DNS_AMPLIFICATION_DISABLED'",
+  "timeout_seconds": 15,
+  "allowed_ports": [53],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "dns_amplification_enabled"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "dns_amplification_disabled"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection timed out",
+    "communications error",
+    "no servers could be reached",
+    "failed to resolve"
+  ],
+  "failure_reason_map": {
+    "connection timed out": "port_filtered",
+    "communications error": "inconclusive",
+    "no servers could be reached": "host_down",
+    "failed to resolve": "host_down"
+  },
+  "references": [
+    "https://manpages.debian.org/dig"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

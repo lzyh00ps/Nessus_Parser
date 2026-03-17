@@ -1,0 +1,62 @@
+{
+  "plugin_id": 143489,
+  "finding_name": "phpMyAdmin 4.0.x < 4.0.10.15 / 4.4.x < 4.4.15.5 / 4.5.x < 4.5.5.1 Multiple Vulnerabilities",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/phpmyadmin/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/phpmyadmin/",
+    "curl -k -s -m 20 https://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "phpmyadmin"
+    ],
+    "version_patterns": [
+      "phpMyAdmin ([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "phpmyadmin ([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "PMA_VERSION.*([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "http-title: phpmyadmin ([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "4.0.10.15",
+    "fixed_version": "4.0.10.15"
+  },
+  "analyst_note": "phpMyAdmin version often visible in login page footer or title. Fixed: 4.0.10.15. CVEs: CVE-2016-2559, CVE-2016-2560, CVE-2016-2561.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2016-2559",
+    "https://www.phpmyadmin.net/security/PMASA-2016-10/",
+    "https://www.phpmyadmin.net/security/PMASA-2016-11/",
+    "https://www.phpmyadmin.net/security/PMASA-2016-12/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

@@ -1,0 +1,56 @@
+{
+  "plugin_id": 137838,
+  "finding_name": "ISC BIND 9.16.x < 9.16.4 DoS",
+  "service": "dns",
+  "port_logic": "any",
+  "command_template": "nmap -Pn --script dns-nsid -p {port} {host}",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "nmap -Pn -sV --version-light -p {port} {host}",
+    "nmap -Pn -sU --script dns-nsid -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "network is unreachable",
+    "connection timed out"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "bind",
+      "named"
+    ],
+    "version_patterns": [
+      "BIND ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "bind ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "dns-nsid: bind.version: ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "ISC BIND[/ ]([0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "9.16.4",
+    "fixed_version": "9.16.4"
+  },
+  "analyst_note": "ISC BIND version via NSID/DNS version TXT query. Fixed: 9.16.4. CVEs: CVE-2020-8618.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2020-8618",
+    "https://kb.isc.org/docs/cve-2020-8618",
+    "https://www.isc.org/download/",
+    "https://www.isc.org/pgpkey/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

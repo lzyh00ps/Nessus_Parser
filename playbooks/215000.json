@@ -1,0 +1,58 @@
+{
+  "plugin_id": 215000,
+  "finding_name": "Grafana Labs 10.4.x < 10.4.15 / 11.0.x < 11.0.11 / 11.1.x < 11.1.11 / 11.2.x < 11.2.6 / 11.3.x < 11.3.3 / 11.4.x < 11.4.1, 11.5.0 (cve-2024-11741)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/api/health",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/api/health",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "grafana"
+    ],
+    "version_patterns": [
+      "\"version\":\"([0-9]+\\.[0-9]+\\.[0-9.]+)\"",
+      "Grafana[/ ]([0-9]+\\.[0-9.]+)",
+      "grafana[/ ]([0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "10.4.15",
+    "fixed_version": "10.4.15"
+  },
+  "analyst_note": "Grafana version via /api/health JSON endpoint. Fixed: 10.4.15. CVEs: CVE-2024-11741.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2024-11741",
+    "https://grafana.com/security/security-advisories/cve-2024-11741/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

@@ -1,0 +1,71 @@
+{
+  "plugin_id": 187908,
+  "finding_name": "Ivanti Connect Secure / Policy Secure Authentication Bypass (CVE-2023-46805 / CVE-2024-21887)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I https://{host}:{port}/dana-na/auth/url_default/welcome.cgi",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "Ivanti",
+    "Pulse Secure",
+    "PulseSecure",
+    "dana-na",
+    "DSSignInURL",
+    "DSID="
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "ivanti",
+      "pulse secure",
+      "connect secure",
+      "ics"
+    ],
+    "version_patterns": [
+      "ICS[^0-9]*([0-9]+\\.[0-9]+[A-Za-z0-9._-]*)",
+      "Pulse[^0-9]*([0-9]+\\.[0-9]+[A-Za-z0-9._-]*)",
+      "Ivanti[^0-9]*([0-9]+\\.[0-9]+[A-Za-z0-9._-]*)"
+    ],
+    "affected_lt": "22.7R2.4",
+    "fixed_version": "9.1R18.3 / 22.4R2.4 / 22.5R2.3 / 22.6R2.2 / 22.7R2.2"
+  },
+  "analyst_note": "CVE-2023-46805 + CVE-2024-21887: Chained authentication bypass + command injection in Ivanti Connect Secure and Policy Secure. Exploited by UNC5221 (Chinese nexus) since Dec 2023. The /dana-na/ path and DSID= cookies are characteristic of Ivanti Connect Secure (formerly Pulse Connect Secure). If Ivanti is confirmed, check CISA emergency directive ED 24-01 mitigations. Apply Ivanti's integrity checker tool (ICT) to detect compromise. Fixed: varies by version track. Note: Ivanti released delayed patches; apply immediately upon availability.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2023-46805",
+    "https://nvd.nist.gov/vuln/detail/CVE-2024-21887",
+    "https://www.ivanti.com/blog/security-update-for-ivanti-connect-secure-and-ivanti-policy-secure-gateways",
+    "https://github.com/dub-flow/CVE-2023-46805",
+    "https://www.volexity.com/blog/2024/01/10/active-exploitation-of-two-zero-day-vulnerabilities-in-ivanti-connect-secure-vpn/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

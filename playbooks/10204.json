@@ -1,0 +1,46 @@
+{
+  "plugin_id": 10204,
+  "finding_name": "RIP Routing Table Poisoning",
+  "service": "banner",
+  "command_template": "nmap -Pn -sU -p 520 --open {host}",
+  "timeout_seconds": 20,
+  "allowed_ports": [
+    520
+  ],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "520/udp open"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "all 1 scanned port",
+    "520/udp  closed"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "operation not permitted"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "host_down",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "operation not permitted": "inconclusive"
+  },
+  "references": [
+    "https://nmap.org/book/man-port-scanning-techniques.html"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16",
+  "fallback_commands_json": [
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ]
+}

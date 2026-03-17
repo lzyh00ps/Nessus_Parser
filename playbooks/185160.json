@@ -1,0 +1,60 @@
+{
+  "plugin_id": 185160,
+  "finding_name": "OpenSSL 3.0.0 < 3.0.13 Multiple Vulnerabilities",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "nmap -Pn --script ssl-cert,ssl-enum-ciphers -p {port} {host}",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "openssl"
+    ],
+    "version_patterns": [
+      "OpenSSL/([0-9]+\\.[0-9]+\\.[0-9]+[a-z]?)",
+      "openssl/([0-9]+\\.[0-9]+\\.[0-9]+[a-z]?)",
+      "openssl ([0-9]+\\.[0-9]+\\.[0-9]+[a-z]?)"
+    ],
+    "affected_lt": "3.0.13",
+    "fixed_version": "3.0.13"
+  },
+  "analyst_note": "OpenSSL version often visible in the Server header (e.g., Apache/x.y.z OpenSSL/x.y.z). Fixed: 3.0.13. CVEs: CVE-2023-5678, CVE-2023-6129, CVE-2023-6237.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2023-5678",
+    "http://www.nessus.org/u?02bfb3df",
+    "http://www.nessus.org/u?71a978e4",
+    "http://www.nessus.org/u?ccacbb1d"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

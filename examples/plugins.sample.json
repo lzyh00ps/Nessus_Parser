@@ -1,0 +1,12 @@
+[
+  {
+    "plugin_id": 104743,
+    "plugin_name": "TLS Version 1.0 Protocol Detection",
+    "family": "General",
+    "severity": "medium",
+    "synopsis": "The remote service supports TLS 1.0.",
+    "description": "The remote service accepts connections using TLS 1.0.",
+    "solution": "Disable TLS 1.0 and require modern protocol versions."
+  }
+]
+

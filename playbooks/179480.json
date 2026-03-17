@@ -1,0 +1,67 @@
+{
+  "plugin_id": 179480,
+  "finding_name": "Fortinet Fortigate xss (FG-IR-21-248)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/login",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/login",
+    "curl -k -s -m 20 https://{host}:{port}/remote/login",
+    "curl -k -s -m 20 -I https://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "fortios",
+      "fortigate",
+      "fortinet"
+    ],
+    "version_patterns": [
+      "FortiOS[/ v]*([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "fortios[/ v]*([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "FortiGate[/ v]*([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "fortigate[/ v]*([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "v([0-9]+\\.[0-9]+\\.[0-9]+),build[0-9]+",
+      "firmware version.*?v?([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "http-server-header: fortiweb[/ ]([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "fortigate-([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "7.0.2",
+    "fixed_version": "7.0.2"
+  },
+  "analyst_note": "Fortinet FortiOS version may appear in login page or management interface. Fixed: 7.0.2. CVEs: CVE-2022-40680.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2022-40680",
+    "https://www.fortiguard.com/psirt/FG-IR-21-248"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

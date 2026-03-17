@@ -1,0 +1,46 @@
+{
+  "plugin_id": 153953,
+  "finding_name": "SSH Weak Key Exchange Algorithms Enabled",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "sh -c 'out=$(nmap -Pn --script ssh2-enum-algos -p {port} {host} 2>&1); printf \"%s\\n\" \"$out\"; printf \"%s\\n\" \"$out\" | tr \"[:upper:]\" \"[:lower:]\" | grep -Eqi \"diffie-hellman-group-exchange-sha1|diffie-hellman-group1-sha1|diffie-hellman-group14-sha1|gss-gex-sha1|gss-group1-sha1|gss-group14-sha1|rsa1024-sha1\" && echo WEAK_KEX_ENABLED || echo WEAK_KEX_DISABLED'",
+  "timeout_seconds": 30,
+  "allowed_ports": [
+    22
+  ],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "weak_kex_enabled"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "weak_kex_disabled"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "operation not permitted"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "host_down",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "operation not permitted": "inconclusive"
+  },
+  "references": [
+    "https://nmap.org/nsedoc/scripts/ssh2-enum-algos.html"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16",
+  "fallback_commands_json": [
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ]
+}

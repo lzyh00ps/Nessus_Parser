@@ -1,0 +1,54 @@
+{
+  "plugin_id": 63147,
+  "finding_name": "MariaDB 5.1.x < 5.1.66 Multiple Vulnerabilities",
+  "service": "banner",
+  "port_logic": "any",
+  "command_template": "nmap -Pn -sV -p {port} {host}",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "nmap -Pn --script mysql-info -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "network is unreachable"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "mariadb"
+    ],
+    "version_patterns": [
+      "MariaDB[^0-9]*([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "([0-9]+\\.[0-9]+\\.[0-9]+)-MariaDB"
+    ],
+    "affected_lt": "5.1.66",
+    "fixed_version": "5.1.66"
+  },
+  "analyst_note": "MariaDB 5.1.x before 5.1.66 multiple vulnerabilities. MariaDB exposes its version in the initial handshake on port 3306 in the format 'X.Y.Z-MariaDB'. nmap -sV reliably extracts this. Fixed: 5.1.66.",
+  "references": [
+    "https://mariadb.com/kb/en/mariadb-5166-release-notes/",
+    "https://nvd.nist.gov/vuln/detail/CVE-2012-5611"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

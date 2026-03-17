@@ -1,0 +1,63 @@
+{
+  "plugin_id": 122823,
+  "finding_name": "WordPress < 5.1.1 Multiple Vulnerabilities",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/feed/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/feed/",
+    "curl -k -s -m 20 https://{host}:{port}/wp-login.php",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake",
+    "404 Not Found"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable",
+    "404 Not Found": "endpoint_not_found"
+  },
+  "version_rule": {
+    "product_terms": [
+      "wordpress"
+    ],
+    "version_patterns": [
+      "<generator>https://wordpress.org/\\?v=([0-9]+\\.[0-9.]+)</generator>",
+      "\"generator\":\"WordPress ([0-9]+\\.[0-9.]+)\"",
+      "WordPress ([0-9]+\\.[0-9.]+)",
+      "http-generator: wordpress ([0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "5.1.1",
+    "fixed_version": "5.1.1"
+  },
+  "analyst_note": "WordPress < 5.1.1 has multiple vulnerabilities including CSRF in comment posting leading to stored XSS and SSRF via pingback. The RSS/Atom feed at /feed/ typically includes a <generator> element with the WP version. Also check the HTML source of any page for <meta name=\"generator\" content=\"WordPress X.Y.Z\">. Fixed: 5.1.1.",
+  "references": [
+    "https://wordpress.org/news/2019/03/wordpress-5-1-1-security-release/",
+    "https://nvd.nist.gov/vuln/detail/CVE-2019-9787",
+    "https://wpscan.com/vulnerability/cve-2019-9787"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

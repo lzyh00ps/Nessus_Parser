@@ -1,0 +1,68 @@
+{
+  "plugin_id": 192044,
+  "finding_name": "Apache Tomcat 11.0.0.M1 < 11.0.0.M17 multiple vulnerabilities",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/",
+    "curl -k -s -m 20 https://{host}:{port}/nessus_version_check",
+    "curl -k -s -m 20 http://{host}:{port}/nessus_version_check",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "tomcat",
+      "apache tomcat"
+    ],
+    "version_patterns": [
+      "Apache Tomcat/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "apache tomcat/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "Tomcat/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "tomcat/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "http-server-header: apache-coyote",
+      "http-title: apache tomcat/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "http-title: apache tomcat - error report",
+      "http-server-header: apache-coyote/([0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "11.0.0",
+    "fixed_version": "11.0.0"
+  },
+  "analyst_note": "Apache Tomcat version appears in default error/welcome pages and optionally the Server header. Fixed: 11.0.0. CVEs: CVE-2024-23672, CVE-2024-24549.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2024-23672",
+    "http://www.nessus.org/u?7d1c78c9",
+    "http://www.nessus.org/u?8632452c",
+    "http://www.nessus.org/u?98932240"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

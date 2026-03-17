@@ -1,0 +1,57 @@
+{
+  "plugin_id": 301975,
+  "finding_name": "SAP NetWeaver Visual Composer Unrestricted File Upload Remote Code Execution (CVE-2025-31324 / SAP Note 3084487)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/developmentserver/metadatauploader",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I http://{host}:{port}/developmentserver/",
+    "curl -k -s -m 20 -I https://{host}:{port}/webdynpro/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "SAP",
+    "NetWeaver",
+    "Visual Composer",
+    "developmentserver"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [
+    "404 Not Found"
+  ],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable",
+    "404 Not Found": "endpoint_not_found"
+  },
+  "version_rule": {},
+  "analyst_note": "CVE-2025-31324 (SAP Note 3084487): Unauthenticated file upload via SAP NetWeaver Visual Composer /developmentserver/metadatauploader endpoint, allowing RCE. CVSS 10.0. If the /developmentserver/ path returns anything other than 404, the endpoint is exposed. This was a zero-day exploited in targeted attacks against large enterprises in 2025. Apply SAP Note 3084487 immediately. Also disable the /developmentserver/ component if not needed.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2025-31324",
+    "https://support.sap.com/en/my-support/knowledge-base/security-notes.html",
+    "https://www.reliaquest.com/blog/cve-2025-31324-analysis/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

@@ -1,0 +1,62 @@
+{
+  "plugin_id": 122589,
+  "finding_name": "Kibana < 5.6.15 / < 6.6.1 Remote Code Execution via Prototype Pollution (CVE-2019-7609)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -s -m 20 http://{host}:{port}/api/status",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 https://{host}:{port}/api/status",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "401 Unauthorized",
+    "403 Forbidden"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable",
+    "401 Unauthorized": "auth_required",
+    "403 Forbidden": "auth_required"
+  },
+  "version_rule": {
+    "product_terms": [
+      "kibana"
+    ],
+    "version_patterns": [
+      "\"number\":\"([0-9]+\\.[0-9]+\\.[0-9]+)\"",
+      "Kibana[/ ]([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "6.6.1",
+    "fixed_version": "6.6.1"
+  },
+  "analyst_note": "CVE-2019-7609: Prototype pollution leading to RCE via Timelion visualizations in Kibana. Affects 5.x before 5.6.15 and 6.x before 6.6.1. The /api/status endpoint returns JSON including the Kibana version as {\"version\":{\"number\":\"6.5.4\",...}}. Kibana typically runs on port 5601. The exploit requires access to the Kibana interface \u2014 if Kibana is internet-exposed, this is critical priority. Fix: upgrade to 5.6.15, 6.6.1, or 7.x.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2019-7609",
+    "https://discuss.elastic.co/t/elastic-stack-6-6-1-and-5-6-15-security-update/169077",
+    "https://github.com/mpgn/CVE-2019-7609",
+    "https://www.exploit-db.com/exploits/46537"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

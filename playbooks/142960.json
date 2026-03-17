@@ -1,0 +1,55 @@
+{
+  "plugin_id": 142960,
+  "finding_name": "HSTS Missing From HTTPS Server (RFC 6797)",
+  "service": "https",
+  "port_logic": "use_scan_port",
+  "command_template": "curl -k -I --silent --show-error --max-time 15 https://{host}:{port}/",
+  "timeout_seconds": 20,
+  "allowed_ports": [
+    443,
+    444,
+    445,
+    448,
+    449,
+    5443,
+    6443,
+    7443,
+    8443,
+    8843,
+    9443,
+    10443
+  ],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "validated_if": [],
+  "validated_if_absent": [
+    "strict-transport-security:"
+  ],
+  "not_validated_if": [],
+  "not_validated_if_present": [
+    "strict-transport-security:"
+  ],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "could not resolve host",
+    "failed to connect",
+    "empty reply from server"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "could not resolve host": "host_down",
+    "failed to connect": "host_down",
+    "empty reply from server": "inconclusive"
+  },
+  "references": [
+    "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16",
+  "fallback_commands_json": [
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ]
+}

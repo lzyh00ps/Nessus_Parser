@@ -1,0 +1,59 @@
+{
+  "plugin_id": 21155,
+  "finding_name": "lighttpd on Windows < 1.4.10a Crafted Filename Request Script Source Disclosure",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I http://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "lighttpd"
+    ],
+    "version_patterns": [
+      "Server: lighttpd/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "server: lighttpd/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "lighttpd/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "http-server-header: lighttpd/([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "1.4.10",
+    "fixed_version": "1.4.10"
+  },
+  "analyst_note": "lighttpd version in Server HTTP response header. Fixed: 1.4.10. CVEs: CVE-2006-0814.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2006-0814",
+    "https://secuniaresearch.flexerasoftware.com/secunia_research/2006-9/advisory/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

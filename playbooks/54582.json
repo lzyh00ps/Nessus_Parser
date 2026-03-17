@@ -1,0 +1,42 @@
+{
+  "plugin_id": 54582,
+  "finding_name": "SMTP Service Cleartext Login Permitted",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "sh -c 'out=$(printf \"EHLO nessus-parser.local\\r\\nQUIT\\r\\n\" | nc -w 8 {host} {port} 2>&1); printf \"%s\\n\" \"$out\"; printf \"%s\\n\" \"$out\" | tr \"[:upper:]\" \"[:lower:]\" | grep -Eqi \"(^|[ -])(auth|250-auth).*(login|plain)\" && echo CLEAR_AUTH_ENABLED || echo CLEAR_AUTH_DISABLED'",
+  "timeout_seconds": 15,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "clear_auth_enabled"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "clear_auth_disabled"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "failed to resolve",
+    "operation not permitted"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "failed to resolve": "host_down",
+    "operation not permitted": "inconclusive"
+  },
+  "references": [
+    "https://nmap.org/nsedoc/scripts/smtp-commands.html"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16",
+  "fallback_commands_json": [
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ]
+}

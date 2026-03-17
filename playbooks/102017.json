@@ -1,0 +1,59 @@
+{
+  "plugin_id": 102017,
+  "finding_name": "Joomla! 1.0.0 < 3.7.4 Multiple Vulnerabilities",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/administrator/manifests/files/joomla.xml",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/administrator/manifests/files/joomla.xml",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "joomla"
+    ],
+    "version_patterns": [
+      "Joomla! ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "<generator>Joomla! - Open Source Content Management - Version ([0-9]+\\.[0-9.]+)</generator>",
+      "content=\"Joomla! ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "http-generator: joomla[^0-9]*([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "3.7.4",
+    "fixed_version": "3.7.4"
+  },
+  "analyst_note": "Joomla! multiple vulnerabilities across versions 1.0.0-3.7.3. The /administrator/ path is characteristic of Joomla admin panel. The HTML source of Joomla sites often contains a meta generator tag with the version. The RSS feed may also expose the version. Fixed: 3.7.4.",
+  "references": [
+    "https://www.joomla.org/announcements/release-news/5718-joomla-3-7-4-release.html",
+    "https://developer.joomla.org/security-centre/685-20170703-core-xss-vulnerability.html"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

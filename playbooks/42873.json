@@ -1,0 +1,54 @@
+{
+  "plugin_id": 42873,
+  "finding_name": "SSL Medium Strength Cipher Suites Supported (SWEET32)",
+  "service": "tls",
+  "port_logic": "use_scan_port",
+  "command_template": "sslscan --no-colour --show-ciphers {sslscan_starttls_args} {host}:{port}",
+  "timeout_seconds": 45,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {
+    "21": "ftp",
+    "25": "smtp",
+    "110": "pop3",
+    "143": "imap",
+    "389": "ldap",
+    "5222": "xmpp",
+    "5269": "xmpp-server",
+    "5432": "postgres",
+    "587": "smtp"
+  },
+  "validated_if": [
+    "3des",
+    "des-cbc3",
+    "sweet32"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "unsupported protocol",
+    "handshake failure",
+    "preferred",
+    "accepted"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "no route to host",
+    "could not open a socket",
+    "operation not permitted"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "no route to host": "host_down",
+    "could not open a socket": "inconclusive",
+    "operation not permitted": "inconclusive"
+  },
+  "references": [
+    "https://github.com/rbsec/sslscan",
+    "https://sweet32.info/"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

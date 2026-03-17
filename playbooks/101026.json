@@ -1,0 +1,61 @@
+{
+  "plugin_id": 101026,
+  "finding_name": "Atlassian Bamboo 5.x < 5.15.7 / 6.0.x < 6.0.1 Incorrect Permission Check",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I http://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "Atlassian Bamboo",
+    "Bamboo"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "bamboo",
+      "atlassian bamboo"
+    ],
+    "version_patterns": [
+      "Bamboo/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "Atlassian Bamboo ([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "5.15.7",
+    "fixed_version": "5.15.7 / 6.0.1"
+  },
+  "analyst_note": "Atlassian Bamboo CI/CD server incorrect permission check allows authenticated users to access restricted operations. Bamboo typically runs on port 8085. Response headers may contain 'Bamboo' or Atlassian indicators. Fixed: 5.15.7, 6.0.1.",
+  "references": [
+    "https://confluence.atlassian.com/bamkb/bamboo-security-advisory-2017-07-05-950390803.html",
+    "https://nvd.nist.gov/vuln/detail/CVE-2017-9506"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

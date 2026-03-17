@@ -1,0 +1,49 @@
+{
+  "plugin_id": 21643,
+  "finding_name": "SSL Cipher Suites Supported",
+  "service": "tls",
+  "port_logic": "use_scan_port",
+  "command_template": "sslscan --no-colour --show-ciphers {sslscan_starttls_args} {host}:{port}",
+  "timeout_seconds": 45,
+  "allowed_ports": [
+    25, 110, 143, 389, 443, 465, 563, 587, 636, 853, 989, 990, 992, 993, 994, 995,
+    1311, 2083, 2087, 2096, 2376, 3269, 3389, 5061, 5349, 5432, 5986, 6443, 6514,
+    6697, 8172, 8443, 8531, 8883, 9200, 9443, 10443
+  ],
+  "blocked_ports": [],
+  "starttls_protocol_map": {
+    "21": "ftp",
+    "25": "smtp",
+    "110": "pop3",
+    "143": "imap",
+    "389": "ldap",
+    "5222": "xmpp",
+    "5269": "xmpp-server",
+    "5432": "postgres",
+    "587": "smtp"
+  },
+  "validated_if": [
+    "accepted",
+    "preferred"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "ssl/tls not supported"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "connection timed out",
+    "connection refused"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "host_down",
+    "connection timed out": "port_filtered",
+    "connection refused": "port_closed"
+  },
+  "references": [
+    "https://github.com/rbsec/sslscan"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

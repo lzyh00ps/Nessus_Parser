@@ -1,0 +1,57 @@
+{
+  "plugin_id": 151646,
+  "finding_name": "SolarWinds Serv-U FTP/MFT Server < 15.2.3 HF2 Remote Code Execution (CVE-2021-35211)",
+  "service": "banner",
+  "port_logic": "any",
+  "command_template": "nmap -Pn -sV -p {port} {host}",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}",
+    "nmap -Pn -sV --version-light -p 22 {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "network is unreachable"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "serv-u"
+    ],
+    "version_patterns": [
+      "Serv-U[/ ]([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "SSH-2\\.0-Serv-U_([0-9]+\\.[0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "15.2.3.2",
+    "fixed_version": "15.2.3 HF2 (15.2.3.2)"
+  },
+  "analyst_note": "CVE-2021-35211: Pre-authentication RCE in SolarWinds Serv-U FTP Server and MFT Server, exploited in the wild by APT (DEV-0322 / UNC2630). The exploit targets the SSH component \u2014 Serv-U exposes SSH on port 22 (default) and the banner 'SSH-2.0-Serv-U_X.Y.Z' is visible. Nmap -sV will typically extract the version from the SSH banner. Fixed in Serv-U 15.2.3 Hotfix 2 (15.2.3.2). If the Serv-U SSH service is internet-exposed, treat as critical priority.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2021-35211",
+    "https://www.solarwinds.com/trust-center/security-advisories/cve-2021-35211",
+    "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2021-35211",
+    "https://github.com/BishopFox/CVE-2021-35211"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

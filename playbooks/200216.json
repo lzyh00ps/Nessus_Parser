@@ -1,0 +1,55 @@
+{
+  "plugin_id": 200216,
+  "finding_name": "IBM DB2 Multiple Vulnerabilities (7145722, 7145730) (Unix)",
+  "service": "banner",
+  "port_logic": "any",
+  "command_template": "nmap -Pn -sV -p {port} {host}",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "network is unreachable"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "db2",
+      "ibm db2"
+    ],
+    "version_patterns": [
+      "DB2/([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "db2/([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "IBM DB2[^0-9]*([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "ibm db2[^0-9]*([0-9]+\\.[0-9]+\\.[0-9.]+)"
+    ]
+  },
+  "analyst_note": "IBM DB2 version via banner on port 50000. CVEs: CVE-2023-52296, CVE-2024-22360.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2023-52296",
+    "https://www.ibm.com/support/pages/node/7145722",
+    "https://www.ibm.com/support/pages/node/7145730"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

@@ -1,0 +1,58 @@
+{
+  "plugin_id": 128329,
+  "finding_name": "Symantec ProxySG 6.5 < 6.5.10.15 / 6.6 < 6.7.4.2 XSS and Information Disclosure Vulnerabilities (SA1472)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I http://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "symantec"
+    ],
+    "version_patterns": [
+      "Symantec[^0-9]*([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "symantec[^0-9]*([0-9]+\\.[0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "6.5.10.15",
+    "fixed_version": "6.5.10.15"
+  },
+  "analyst_note": "Symantec product version in management web interface. Fixed: 6.5.10.15. CVEs: CVE-2018-18370, CVE-2018-18371.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2018-18370",
+    "https://support.symantec.com/us/en/article.symsa1472.html",
+    "https://support.symantec.com/us/en/article.prod1629.html"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

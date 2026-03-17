@@ -1,0 +1,53 @@
+{
+  "plugin_id": 201425,
+  "finding_name": "CentOS SEoL (7.x)",
+  "service": "https",
+  "port_logic": "use_scan_port",
+  "command_template": "sh -c 'out=$(curl -k -I --silent --show-error --max-time 15 https://{host}:{port}/ 2>&1); printf \"%s\\n\" \"$out\"; printf \"%s\\n\" \"$out\" | tr \"[:upper:]\" \"[:lower:]\" | grep -qi \"server: .*centos\" && echo CENTOS_EOL_BANNER || echo CENTOS_EOL_NOT_CONFIRMED'",
+  "timeout_seconds": 20,
+  "allowed_ports": [
+    443,
+    444,
+    445,
+    448,
+    449,
+    5443,
+    6443,
+    7443,
+    8443,
+    8843,
+    9443,
+    10443
+  ],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "centos_eol_banner"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "centos_eol_not_confirmed"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "could not resolve host"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "could not resolve host": "host_down"
+  },
+  "references": [
+    "https://access.redhat.com/articles/3078"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16",
+  "fallback_commands_json": [
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ]
+}

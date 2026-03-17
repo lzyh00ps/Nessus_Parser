@@ -1,0 +1,60 @@
+{
+  "plugin_id": 68981,
+  "finding_name": "Apache Struts 2 DefaultActionMapper Remote Code Execution (CVE-2013-2251)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I http://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "struts",
+      "apache struts"
+    ],
+    "version_patterns": [
+      "Struts[^0-9]*([0-9]+\\.[0-9]+\\.[0-9.]+)",
+      "Apache Struts[^0-9]*([0-9]+\\.[0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "2.3.15.1",
+    "fixed_version": "2.3.15.1"
+  },
+  "analyst_note": "CVE-2013-2251: RCE via OGNL injection in DefaultActionMapper prefix parameters (action:, redirect:, redirectAction:) in Apache Struts 2.0.0 - 2.3.15. Apache Struts version is not typically exposed in HTTP response headers. If .action or .do URL patterns are observed (indicator of Struts), escalate for manual testing. The Equifax breach (2017) was caused by a similar Struts vulnerability (CVE-2017-5638). Check for upgrade to Struts 2.3.15.1 or later.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2013-2251",
+    "https://struts.apache.org/announce-2013#a20130710",
+    "https://www.exploit-db.com/exploits/27135",
+    "https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/multi/http/struts_default_action_mapper.rb"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

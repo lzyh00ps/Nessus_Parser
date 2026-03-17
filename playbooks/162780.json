@@ -1,0 +1,62 @@
+{
+  "plugin_id": 162780,
+  "finding_name": "GitLab 14.0 < 14.10.5 / 15.0 < 15.0.4 / 15.1 < 15.1.1 Remote Code Execution (CVE-2022-2185)",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/api/v4/version",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 http://{host}:{port}/api/v4/version",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake",
+    "401 Unauthorized",
+    "403 Forbidden"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable",
+    "401 Unauthorized": "auth_required",
+    "403 Forbidden": "auth_required"
+  },
+  "version_rule": {
+    "product_terms": [
+      "gitlab"
+    ],
+    "version_patterns": [
+      "\"version\":\"([0-9]+\\.[0-9]+\\.[0-9]+)\"",
+      "GitLab/([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "14.10.5",
+    "fixed_version": "14.10.5 / 15.0.4 / 15.1.1"
+  },
+  "analyst_note": "CVE-2022-2185: Authenticated RCE in GitLab CE/EE via malicious Subgroup import. Requires authentication but can be exploited by any authenticated user. Fixed: 14.10.5, 15.0.4, 15.1.1.",
+  "references": [
+    "https://about.gitlab.com/releases/2022/07/01/security-release-gitlab-15-1-1-released/",
+    "https://nvd.nist.gov/vuln/detail/CVE-2022-2185",
+    "https://github.com/safe3s/CVE-2022-2185"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

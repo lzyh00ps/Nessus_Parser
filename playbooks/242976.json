@@ -1,0 +1,54 @@
+{
+  "plugin_id": 242976,
+  "finding_name": "MongoDB 8.0.x < 8.0.10 DoS (SERVER-106751)",
+  "service": "banner",
+  "port_logic": "any",
+  "command_template": "nmap -Pn -sV -p {port} {host}",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "network is unreachable"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "mongodb"
+    ],
+    "version_patterns": [
+      "MongoDB ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "mongodb ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "mongod ([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "8.0.10",
+    "fixed_version": "8.0.10"
+  },
+  "analyst_note": "MongoDB version via nmap -sV banner on port 27017. Fixed: 8.0.10. CVEs: CVE-2025-6712.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2025-6712",
+    "https://jira.mongodb.org/browse/SERVER-106751"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

@@ -1,0 +1,70 @@
+{
+  "plugin_id": 132320,
+  "finding_name": "Atlassian JIRA < 8.4.2 Information disclosure in Application links plugin",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 https://{host}:{port}/rest/api/2/serverInfo",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 https://{host}:{port}/login.jsp",
+    "curl -k -s -m 20 http://{host}:{port}/login.jsp",
+    "curl -k -s -m 20 http://{host}:{port}/rest/api/2/serverInfo",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake",
+    "401 unauthorized",
+    "403 forbidden"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable",
+    "401 unauthorized": "auth_required",
+    "403 forbidden": "auth_required"
+  },
+  "version_rule": {
+    "product_terms": [
+      "jira",
+      "atlassian jira"
+    ],
+    "version_patterns": [
+      "\"version\":\"([0-9]+\\.[0-9]+\\.[0-9]+)\"",
+      "JIRA[/ ]([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "jira[/ ]([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "Atlassian JIRA[^0-9]*([0-9]+\\.[0-9.]+)",
+      "atlassian jira[^0-9]*([0-9]+\\.[0-9.]+)",
+      "Version ([0-9]+\\.[0-9]+\\.[0-9]+) #[0-9]",
+      "version ([0-9]+\\.[0-9]+\\.[0-9]+) #[0-9]",
+      "Atlassian JIRA[/ ]([0-9]+\\.[0-9.]+)"
+    ],
+    "affected_lt": "8.4.2",
+    "fixed_version": "8.4.2"
+  },
+  "analyst_note": "Atlassian JIRA version via /rest/api/2/serverInfo (may require auth). Fixed: 8.4.2. CVEs: CVE-2019-15011, CVE-2019-15013.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2019-15011",
+    "https://jira.atlassian.com/browse/JRASERVER-70409"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

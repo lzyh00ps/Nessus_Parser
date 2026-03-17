@@ -1,0 +1,59 @@
+{
+  "plugin_id": 265325,
+  "finding_name": "Jenkins LTS < 2.516.3 / Jenkins weekly < 2.528 Multiple Vulnerabilities",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I http://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "jenkins"
+    ],
+    "version_patterns": [
+      "X-Jenkins: ([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)",
+      "x-jenkins: ([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)",
+      "Jenkins/([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)",
+      "jenkins/([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+    ],
+    "affected_lt": "2.528",
+    "fixed_version": "2.528"
+  },
+  "analyst_note": "Jenkins exposes its version in the X-Jenkins HTTP response header. Fixed: 2.528. CVEs: CVE-2025-5115, CVE-2025-59474, CVE-2025-59475.",
+  "references": [
+    "https://nvd.nist.gov/vuln/detail/CVE-2025-5115",
+    "https://jenkins.io/security/advisory/2025-09-17"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}

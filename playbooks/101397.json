@@ -1,0 +1,64 @@
+{
+  "plugin_id": 101397,
+  "finding_name": "DNN (DotNetNuke) 5.2.0 < 9.1.1 Multiple Vulnerabilities",
+  "service": "https",
+  "port_logic": "any",
+  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/",
+  "timeout_seconds": 30,
+  "allowed_ports_json": "[]",
+  "blocked_ports_json": "[]",
+  "fallback_commands_json": [
+    "curl -k -s -m 20 -I http://{host}:{port}/",
+    "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [
+    "DNN",
+    "DotNetNuke",
+    "X-DNN-CMS-Version",
+    "__RequestVerificationToken"
+  ],
+  "validated_if_absent_json": [],
+  "not_validated_if": [],
+  "not_validated_if_present_json": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "connection refused",
+    "no route to host",
+    "could not connect",
+    "network is unreachable",
+    "ssl handshake"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "dns_failure",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_unreachable",
+    "network is unreachable": "host_unreachable"
+  },
+  "version_rule": {
+    "product_terms": [
+      "dnn",
+      "dotnetnuke"
+    ],
+    "version_patterns": [
+      "DNN Platform ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "DotNetNuke[^0-9]*([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "X-DNN-CMS-Version: ([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "9.1.1",
+    "fixed_version": "9.1.1"
+  },
+  "analyst_note": "DNN (DotNetNuke) CMS multiple vulnerabilities. DNN exposes 'X-DNN-CMS-Version' in HTTP response headers on some configurations. Also check HTML meta generator or page footer. Fixed: 9.1.1.",
+  "references": [
+    "https://www.dnnsoftware.com/community/security/security-center",
+    "https://nvd.nist.gov/vuln/detail/CVE-2017-0929"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-03-16"
+}
