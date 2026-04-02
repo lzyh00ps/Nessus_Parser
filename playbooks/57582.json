@@ -18,11 +18,15 @@
     "5432": "postgres",
     "587": "smtp"
   },
-  "validated_if": [],
+  "validated_if": [
+    "self signed certificate",
+    "self-signed certificate"
+  ],
   "validated_if_absent": [],
   "not_validated_if": [
     "unsupported protocol",
-    "handshake failure"
+    "handshake failure",
+    "verify return code: 0 (ok)"
   ],
   "not_validated_if_present": [],
   "inconclusive_if": [

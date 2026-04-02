@@ -7,6 +7,46 @@ from nessus_parser.core.paths import PLAYBOOKS_DIR
 from nessus_parser.db.connection import connect
 
 
+def _pb_list(payload: dict, key: str) -> list:
+    """Read a list field from a playbook payload, accepting both 'key' and 'key_json' variants.
+
+    Some older playbook files store list fields under a 'key_json' name (e.g.
+    'fallback_commands_json') rather than the canonical plain name.  When the
+    plain key is absent or None this helper falls back to the '_json' variant
+    and, if that value is a raw JSON string, parses it first.
+    """
+    for k in (key, key + "_json"):
+        val = payload.get(k)
+        if val is None:
+            continue
+        if isinstance(val, list):
+            return val
+        if isinstance(val, str):
+            try:
+                parsed = json.loads(val)
+                return parsed if isinstance(parsed, list) else []
+            except (json.JSONDecodeError, ValueError):
+                pass
+    return []
+
+
+def _pb_dict(payload: dict, key: str) -> dict:
+    """Read a dict field from a playbook payload, accepting both 'key' and 'key_json' variants."""
+    for k in (key, key + "_json"):
+        val = payload.get(k)
+        if val is None:
+            continue
+        if isinstance(val, dict):
+            return val
+        if isinstance(val, str):
+            try:
+                parsed = json.loads(val)
+                return parsed if isinstance(parsed, dict) else {}
+            except (json.JSONDecodeError, ValueError):
+                pass
+    return {}
+
+
 def import_playbook(db_path: Path, playbook_path: Path) -> None:
     payload = json.loads(playbook_path.read_text())
     connection = connect(db_path)
@@ -65,18 +105,18 @@ def import_playbook(db_path: Path, playbook_path: Path) -> None:
                 payload.get("port_logic"),
                 payload["command_template"],
                 payload.get("timeout_seconds", 30),
-                json.dumps(payload.get("allowed_ports", [])),
-                json.dumps(payload.get("blocked_ports", [])),
-                json.dumps(payload.get("starttls_protocol_map", {})),
-                json.dumps(payload.get("fallback_commands", [])),
-                json.dumps(payload.get("version_rule", {})),
-                json.dumps(payload.get("validated_if", [])),
-                json.dumps(payload.get("validated_if_absent", [])),
-                json.dumps(payload.get("not_validated_if", [])),
-                json.dumps(payload.get("not_validated_if_present", [])),
-                json.dumps(payload.get("inconclusive_if", [])),
-                json.dumps(payload.get("failure_reason_map", {})),
-                json.dumps(payload.get("references", [])),
+                json.dumps(_pb_list(payload, "allowed_ports")),
+                json.dumps(_pb_list(payload, "blocked_ports")),
+                json.dumps(_pb_dict(payload, "starttls_protocol_map")),
+                json.dumps(_pb_list(payload, "fallback_commands")),
+                json.dumps(_pb_dict(payload, "version_rule")),
+                json.dumps(_pb_list(payload, "validated_if")),
+                json.dumps(_pb_list(payload, "validated_if_absent")),
+                json.dumps(_pb_list(payload, "not_validated_if")),
+                json.dumps(_pb_list(payload, "not_validated_if_present")),
+                json.dumps(_pb_list(payload, "inconclusive_if")),
+                json.dumps(_pb_dict(payload, "failure_reason_map")),
+                json.dumps(_pb_list(payload, "references")),
                 payload.get("reviewed_by"),
                 payload.get("last_verified"),
                 str(playbook_path),
@@ -472,3 +512,79 @@ def _build_template(plugin_id: int, finding_name: str) -> dict[str, object]:
         "reviewed_by": None,
         "last_verified": None
     }
+
+
+def audit_playbooks(db_path: Path) -> list[dict[str, object]]:
+    """Return an audit report for every imported playbook.
+
+    Each entry contains:
+      plugin_id, finding_name, source_path,
+      has_validated_if (bool), has_version_rule (bool), has_validated_if_absent (bool),
+      has_not_validated_if (bool), has_fallback_commands (bool),
+      conclusive (bool)  – True when the playbook can produce a definitive result.
+    """
+    connection = connect(db_path)
+    try:
+        rows = list(
+            connection.execute(
+                """
+                SELECT
+                    plugin_id,
+                    finding_name,
+                    source_path,
+                    validated_if_json,
+                    validated_if_absent_json,
+                    not_validated_if_json,
+                    not_validated_if_present_json,
+                    version_rule_json,
+                    fallback_commands_json
+                FROM playbooks
+                ORDER BY plugin_id
+                """
+            )
+        )
+    finally:
+        connection.close()
+
+    results: list[dict[str, object]] = []
+    for row in rows:
+        (
+            plugin_id,
+            finding_name,
+            source_path,
+            validated_if_raw,
+            validated_if_absent_raw,
+            not_validated_if_raw,
+            not_validated_if_present_raw,
+            version_rule_raw,
+            fallback_commands_raw,
+        ) = row
+
+        validated_if = json.loads(validated_if_raw or "[]")
+        validated_if_absent = json.loads(validated_if_absent_raw or "[]")
+        not_validated_if = json.loads(not_validated_if_raw or "[]")
+        not_validated_if_present = json.loads(not_validated_if_present_raw or "[]")
+        version_rule = json.loads(version_rule_raw or "{}")
+        fallback_commands = json.loads(fallback_commands_raw or "[]")
+
+        has_validated_if = bool(validated_if)
+        has_validated_if_absent = bool(validated_if_absent)
+        has_not_validated_if = bool(not_validated_if) or bool(not_validated_if_present)
+        has_version_rule = bool(version_rule.get("version_patterns") or version_rule.get("affected_lt") or version_rule.get("affected_lte"))
+        has_fallback_commands = bool(fallback_commands)
+
+        conclusive = has_validated_if or has_validated_if_absent or has_version_rule
+
+        results.append({
+            "plugin_id": plugin_id,
+            "finding_name": finding_name,
+            "source_path": source_path,
+            "has_validated_if": has_validated_if,
+            "has_version_rule": has_version_rule,
+            "has_validated_if_absent": has_validated_if_absent,
+            "has_not_validated_if": has_not_validated_if,
+            "has_fallback_commands": has_fallback_commands,
+            "conclusive": conclusive,
+        })
+
+    return results

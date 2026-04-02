@@ -7,6 +7,7 @@ from pathlib import Path
 from nessus_parser.core.paths import DB_PATH
 from nessus_parser.db.schema import initialize_database
 from nessus_parser.services.playbooks import (
+    audit_playbooks,
     create_playbook_templates,
     create_playbook_template,
     get_playbook_summary,
@@ -118,6 +119,17 @@ def main() -> None:
     search_plugins_cmd.add_argument("--limit", type=int, default=50)
 
     subparsers.add_parser("list-playbooks")
+
+    audit_playbooks_cmd = subparsers.add_parser(
+        "audit-playbooks",
+        help="Audit imported playbooks for missing validation criteria",
+    )
+    audit_playbooks_cmd.add_argument(
+        "--no-conclusive-only",
+        dest="no_conclusive_only",
+        action="store_true",
+        help="Only show playbooks that cannot produce a conclusive result",
+    )
 
     show_finding = subparsers.add_parser("show-finding")
     show_finding.add_argument("--plugin-id", type=int, required=True)
@@ -312,6 +324,43 @@ def main() -> None:
     if args.command == "list-playbooks":
         for plugin_id, finding_name, source_path in list_playbooks(DB_PATH):
             print(f"{plugin_id}\t{finding_name}\t{source_path}")
+        return
+
+    if args.command == "audit-playbooks":
+        entries = audit_playbooks(DB_PATH)
+        if not entries:
+            print("No playbooks found in local database")
+            return
+
+        if args.no_conclusive_only:
+            entries = [e for e in entries if not e["conclusive"]]
+
+        total = len(entries)
+        conclusive_count = sum(1 for e in entries if e["conclusive"])
+        no_conclusive_count = total - conclusive_count
+        no_fallback_count = sum(1 for e in entries if not e["has_fallback_commands"])
+
+        print(heavy_separator())
+        print(bold(bright_cyan("  PLAYBOOK AUDIT")))
+        print(heavy_separator())
+        print(f"  {bold('Total playbooks:')}         {total}")
+        print(f"  {bold('Conclusive criteria:')}     {green(str(conclusive_count))}")
+        print(f"  {bold('No conclusive criteria:')}  {bright_red(str(no_conclusive_count))} — will always produce inconclusive/error results")
+        print(f"  {bold('No fallback commands:')}    {yellow(str(no_fallback_count))}")
+        print(heavy_separator())
+
+        for entry in entries:
+            pid = entry["plugin_id"]
+            name = entry["finding_name"]
+            flags: list[str] = []
+            if not entry["conclusive"]:
+                flags.append(bright_red("NO_CONCLUSIVE_CRITERIA"))
+            if not entry["has_fallback_commands"]:
+                flags.append(yellow("NO_FALLBACK"))
+            if not entry["has_not_validated_if"]:
+                flags.append(dim("NO_FP_CRITERIA"))
+            flag_str = "  ".join(flags) if flags else green("ok")
+            print(f"  {bold(str(pid))}\t{dim(str(name)[:60])}\t{flag_str}")
         return
 
     if args.command == "show-finding":

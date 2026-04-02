@@ -179,6 +179,9 @@ def export_all_reports_html(db_path: Path, output_path: Path, project_name: str 
         summary = get_validation_summary(db_path, plugin_id, project_name=project_name)
         latest_results = get_latest_validation_results(db_path, plugin_id, project_name=project_name)
 
+        if not latest_results:
+            continue
+
         # Pick the first validated result as the evidence sample
         validated_sample = None
         for row in latest_results:
@@ -227,9 +230,11 @@ def export_all_reports_html(db_path: Path, output_path: Path, project_name: str 
         )
 
     report_title = f"Nessus Parser Report \u2014 {html.escape(project_name)}" if project_name else "Nessus Parser Report"
+    # Escape "</" so "</script>" in tool output cannot break the embedded script tag
+    safe_json = json.dumps(dataset).replace("</", "<\\/")
     output_path.write_text(
         _REPORT_TEMPLATE.read_text()
-        .replace("DATA_JSON_PLACEHOLDER", json.dumps(dataset))
+        .replace("DATA_JSON_PLACEHOLDER", safe_json)
         .replace("REPORT_TITLE_PLACEHOLDER", report_title)
     )
     return output_path

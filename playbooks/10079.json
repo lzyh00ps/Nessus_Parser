@@ -11,9 +11,16 @@
     "nmap -Pn --script ftp-anon,banner -p {port} {host}",
     "nmap -Pn -sV --version-light -p {port} {host}"
   ],
-  "validated_if": [],
+  "validated_if": [
+    "anonymous ftp login allowed",
+    "ftp-anon: anonymous ftp login allowed"
+  ],
   "validated_if_absent_json": [],
-  "not_validated_if": [],
+  "not_validated_if": [
+    "anonymous ftp login disallowed",
+    "530 login incorrect",
+    "530 anonymous login"
+  ],
   "not_validated_if_present_json": [],
   "inconclusive_if": [
     "failed to resolve",

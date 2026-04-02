@@ -768,11 +768,12 @@ def _derive_status(
         if term and term in haystack:
             return _map_reason(playbook, haystack, default="inconclusive"), _map_reason(playbook, haystack, default=None)
 
-    validated_absent_terms = [item.lower() for item in playbook.get("validated_if_absent", [])]
-    if validated_absent_terms and all(term and term not in haystack for term in validated_absent_terms):
-        return "validated", None
-
     if exit_code == 0:
+        # Only check for absent-term validation on a successful command execution.
+        # Applying this against a failed command's garbage output would produce false positives.
+        validated_absent_terms = [item.lower() for item in playbook.get("validated_if_absent", [])]
+        if validated_absent_terms and all(term and term not in haystack for term in validated_absent_terms):
+            return "validated", None
         return "inconclusive", None
 
     return _map_reason(playbook, haystack, default="error"), _map_reason(playbook, haystack, default=None)
