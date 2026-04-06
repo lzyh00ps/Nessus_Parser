@@ -143,13 +143,13 @@ def get_finding_targets(
         connection.close()
 
 
-def get_finding_ids_for_plugin(db_path: Path, plugin_id: int, project_name: str | None = None) -> list[tuple[int, str, int | None, str | None]]:
+def get_finding_ids_for_plugin(db_path: Path, plugin_id: int, project_name: str | None = None) -> list[tuple[int, str, int | None, str | None, str | None]]:
     connection = connect(db_path)
     try:
         return list(
             connection.execute(
                 """
-                SELECT MIN(id) AS id, host, port, protocol
+                SELECT MIN(id) AS id, host, port, protocol, plugin_output
                 FROM findings
                 WHERE plugin_id = ?
                 AND (? IS NULL OR project_name = ?)

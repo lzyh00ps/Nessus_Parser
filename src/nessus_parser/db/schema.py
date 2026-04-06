@@ -75,6 +75,9 @@ CREATE TABLE IF NOT EXISTS validation_runs (
     project_name TEXT NOT NULL DEFAULT 'default',
     executed_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_valruns_lookup
+ON validation_runs(plugin_id, project_name, host, port);
 """
 
 

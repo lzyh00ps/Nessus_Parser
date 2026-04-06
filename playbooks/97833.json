@@ -1,0 +1,47 @@
+{
+  "plugin_id": 97833,
+  "finding_name": "MS17-010: Security Update for Microsoft Windows SMB Server",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "nmap -Pn --script smb-vuln-ms17-010 -p {port} {host}",
+  "timeout_seconds": 45,
+  "allowed_ports": [
+    445
+  ],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "state: vulnerable",
+    "vulnerable"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "does not appear vulnerable",
+    "host does not appear",
+    "did not find vulnerable",
+    "not vulnerable"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "smb: protocol negotiation failed",
+    "smb2: protocol negotiation failed",
+    "connection refused",
+    "timed out",
+    "no route to host"
+  ],
+  "failure_reason_map": {
+    "smb: protocol negotiation failed": "inconclusive",
+    "smb2: protocol negotiation failed": "inconclusive",
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "no route to host": "host_down"
+  },
+  "references": [
+    "https://nmap.org/nsedoc/scripts/smb-vuln-ms17-010.html",
+    "https://www.tenable.com/plugins/nessus/97833"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-04-05"
+}

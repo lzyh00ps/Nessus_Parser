@@ -1,0 +1,53 @@
+{
+  "plugin_id": 83875,
+  "finding_name": "SSL/TLS Diffie-Hellman Modulus <= 1024 Bits (Logjam)",
+  "service": "tls",
+  "port_logic": "use_scan_port",
+  "command_template": "openssl s_client -connect {host}:{port} {openssl_tls_args} </dev/null",
+  "timeout_seconds": 30,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {
+    "21": "ftp",
+    "25": "smtp",
+    "110": "pop3",
+    "143": "imap",
+    "389": "ldap",
+    "587": "smtp",
+    "5432": "postgres"
+  },
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "dh, 512 bits",
+    "dh, 768 bits",
+    "dh, 1024 bits"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "dh, 2048 bits",
+    "dh, 3072 bits",
+    "dh, 4096 bits"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "no route to host",
+    "bio_lookup_ex:system lib",
+    "temporary failure in name resolution"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "no route to host": "host_down",
+    "bio_lookup_ex:system lib": "host_down",
+    "temporary failure in name resolution": "host_down"
+  },
+  "references": [
+    "https://weakdh.org/",
+    "https://www.tenable.com/plugins/nessus/83875"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-04-05"
+}

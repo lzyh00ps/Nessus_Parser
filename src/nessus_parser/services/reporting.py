@@ -12,7 +12,9 @@ from nessus_parser.services.playbooks import get_playbook, list_playbook_plugin_
 from nessus_parser.services.scans import get_plugin_details
 from nessus_parser.services.validation import (
     get_latest_validation_results,
+    get_project_latest_results,
     get_validation_summary,
+    list_validated_plugin_ids,
 )
 
 
@@ -165,7 +167,7 @@ def export_all_reports_csv(db_path: Path, output_path: Path, project_name: str |
 
 def export_all_reports_html(db_path: Path, output_path: Path, project_name: str | None = None) -> Path:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    plugin_ids = list_playbook_plugin_ids(db_path)
+    plugin_ids = list_validated_plugin_ids(db_path, project_name=project_name)
     dataset: list[dict[str, object]] = []
 
     for plugin_id in plugin_ids:
@@ -229,7 +231,8 @@ def export_all_reports_html(db_path: Path, output_path: Path, project_name: str 
             }
         )
 
-    report_title = f"Nessus Parser Report \u2014 {html.escape(project_name)}" if project_name else "Nessus Parser Report"
+    display_project = project_name if project_name and project_name != "default" else None
+    report_title = f"Nessus Parser Report \u2014 {html.escape(display_project)}" if display_project else "Nessus Parser Report"
     # Escape "</" so "</script>" in tool output cannot break the embedded script tag
     safe_json = json.dumps(dataset).replace("</", "<\\/")
     output_path.write_text(
@@ -238,3 +241,260 @@ def export_all_reports_html(db_path: Path, output_path: Path, project_name: str 
         .replace("REPORT_TITLE_PLACEHOLDER", report_title)
     )
     return output_path
+
+
+# ---------------------------------------------------------------------------
+# Diff / delta report
+# ---------------------------------------------------------------------------
+
+_CONCLUSIVE = {"validated", "not_validated"}
+
+
+def build_diff_report(
+    db_path: Path,
+    before_project: str,
+    after_project: str,
+    output_path: Path | None = None,
+) -> str:
+    """Compare two projects and return a terminal-formatted diff summary.
+
+    If *output_path* is given, also writes a self-contained HTML diff report.
+
+    Categories
+    ----------
+    remediated       validated → not_validated  (client patched it)
+    regressed        not_validated → validated  (new or reintroduced)
+    still_vulnerable validated  → validated     (unpatched)
+    still_clean      not_validated → not_validated
+    new              only in after project (not in before)
+    dropped          only in before project (rescoped / host removed)
+    inconclusive     at least one side is inconclusive / error / skipped
+    """
+    before = get_project_latest_results(db_path, before_project)
+    after = get_project_latest_results(db_path, after_project)
+
+    all_keys = set(before) | set(after)
+
+    buckets: dict[str, list[dict]] = {
+        "remediated": [],
+        "regressed": [],
+        "still_vulnerable": [],
+        "still_clean": [],
+        "new": [],
+        "dropped": [],
+        "inconclusive": [],
+    }
+
+    for key in sorted(all_keys):
+        plugin_id, host, port = key
+        b_status = before.get(key)
+        a_status = after.get(key)
+        entry = {
+            "plugin_id": plugin_id,
+            "plugin_name": _plugin_name(db_path, plugin_id),
+            "host": host,
+            "port": port,
+            "before": b_status or "-",
+            "after": a_status or "-",
+        }
+        if b_status is None:
+            buckets["new"].append(entry)
+        elif a_status is None:
+            buckets["dropped"].append(entry)
+        elif b_status == "validated" and a_status == "not_validated":
+            buckets["remediated"].append(entry)
+        elif b_status == "not_validated" and a_status == "validated":
+            buckets["regressed"].append(entry)
+        elif b_status == "validated" and a_status == "validated":
+            buckets["still_vulnerable"].append(entry)
+        elif b_status == "not_validated" and a_status == "not_validated":
+            buckets["still_clean"].append(entry)
+        else:
+            buckets["inconclusive"].append(entry)
+
+    lines = _format_diff_terminal(before_project, after_project, buckets)
+    result = "\n".join(lines)
+
+    if output_path is not None:
+        _write_diff_html(before_project, after_project, buckets, output_path)
+
+    return result
+
+
+def _plugin_name(db_path: Path, plugin_id: int) -> str:
+    plugin = get_plugin_details(db_path, plugin_id)
+    return plugin[1] if plugin else str(plugin_id)
+
+
+def _format_diff_terminal(
+    before_project: str,
+    after_project: str,
+    buckets: dict[str, list[dict]],
+) -> list[str]:
+    remediated     = buckets["remediated"]
+    regressed      = buckets["regressed"]
+    still_vuln     = buckets["still_vulnerable"]
+    still_clean    = buckets["still_clean"]
+    new_findings   = buckets["new"]
+    dropped        = buckets["dropped"]
+    inconclusive   = buckets["inconclusive"]
+
+    total_before = len(remediated) + len(regressed) + len(still_vuln) + len(still_clean) + len(dropped) + len(inconclusive)
+    total_after  = len(remediated) + len(regressed) + len(still_vuln) + len(still_clean) + len(new_findings) + len(inconclusive)
+
+    lines = [
+        "",
+        "=" * 70,
+        f"  DIFF REPORT  {before_project}  →  {after_project}",
+        "=" * 70,
+        f"  Before: {total_before} findings   After: {total_after} findings",
+        "",
+        f"  ✓  Remediated       {len(remediated):>5}  (was vulnerable, now clean)",
+        f"  ✗  Regressed        {len(regressed):>5}  (was clean, now vulnerable)",
+        f"  ⚠  Still vulnerable {len(still_vuln):>5}  (unpatched)",
+        f"  ·  Still clean      {len(still_clean):>5}",
+        f"  +  New findings     {len(new_findings):>5}  (only in after)",
+        f"  -  Dropped          {len(dropped):>5}  (only in before)",
+        f"  ?  Inconclusive     {len(inconclusive):>5}",
+        "=" * 70,
+    ]
+
+    def _rows(entries: list[dict], limit: int = 50) -> list[str]:
+        out = []
+        for e in entries[:limit]:
+            port_str = f":{e['port']}" if e["port"] is not None else ""
+            out.append(
+                f"    [{e['plugin_id']}] {e['host']}{port_str}  "
+                f"{e['before']} → {e['after']}  {e['plugin_name']}"
+            )
+        if len(entries) > limit:
+            out.append(f"    ... {len(entries) - limit} more")
+        return out
+
+    if remediated:
+        lines += ["", f"REMEDIATED ({len(remediated)}):"] + _rows(remediated)
+    if regressed:
+        lines += ["", f"REGRESSED ({len(regressed)}):"] + _rows(regressed)
+    if still_vuln:
+        lines += ["", f"STILL VULNERABLE ({len(still_vuln)}):"] + _rows(still_vuln)
+    if new_findings:
+        lines += ["", f"NEW ({len(new_findings)}):"] + _rows(new_findings)
+    if dropped:
+        lines += ["", f"DROPPED ({len(dropped)}):"] + _rows(dropped)
+    if inconclusive:
+        lines += ["", f"INCONCLUSIVE ({len(inconclusive)}):"] + _rows(inconclusive)
+
+    return lines
+
+
+def _write_diff_html(
+    before_project: str,
+    after_project: str,
+    buckets: dict[str, list[dict]],
+    output_path: Path,
+) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    def _rows_html(entries: list[dict]) -> str:
+        if not entries:
+            return "<tr><td colspan='5' style='color:var(--text-dim);font-style:italic'>None</td></tr>"
+        rows = []
+        for e in entries:
+            port_str = str(e["port"]) if e["port"] is not None else "-"
+            rows.append(
+                f"<tr>"
+                f"<td>{html.escape(str(e['plugin_id']))}</td>"
+                f"<td>{html.escape(e['plugin_name'])}</td>"
+                f"<td>{html.escape(e['host'])}</td>"
+                f"<td>{html.escape(port_str)}</td>"
+                f"<td><span class='before'>{html.escape(e['before'])}</span>"
+                f" → <span class='after-{html.escape(e['after'])}'>{html.escape(e['after'])}</span></td>"
+                f"</tr>"
+            )
+        return "\n".join(rows)
+
+    def _section(title: str, css_class: str, entries: list[dict]) -> str:
+        count = len(entries)
+        return f"""
+        <section class="diff-section {css_class}">
+          <h2>{html.escape(title)} <span class="count">{count}</span></h2>
+          <table>
+            <thead><tr><th>Plugin ID</th><th>Finding</th><th>Host</th><th>Port</th><th>Status Change</th></tr></thead>
+            <tbody>{_rows_html(entries)}</tbody>
+          </table>
+        </section>"""
+
+    remediated  = buckets["remediated"]
+    regressed   = buckets["regressed"]
+    still_vuln  = buckets["still_vulnerable"]
+    still_clean = buckets["still_clean"]
+    new_f       = buckets["new"]
+    dropped     = buckets["dropped"]
+    inconc      = buckets["inconclusive"]
+
+    body = (
+        _section("Remediated", "sec-remediated", remediated)
+        + _section("Regressed", "sec-regressed", regressed)
+        + _section("Still Vulnerable", "sec-still-vuln", still_vuln)
+        + _section("New Findings", "sec-new", new_f)
+        + _section("Dropped", "sec-dropped", dropped)
+        + _section("Still Clean", "sec-still-clean", still_clean)
+        + _section("Inconclusive", "sec-inconclusive", inconc)
+    )
+
+    title = html.escape(f"Diff Report — {before_project} → {after_project}")
+    output_path.write_text(f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{title}</title>
+  <style>
+    :root {{
+      --bg:#0d1117;--bg-card:#161b22;--border:#30363d;--text:#c9d1d9;--text-dim:#8b949e;
+      --accent:#58a6ff;--green:#3fb950;--red:#f85149;--yellow:#d29922;--orange:#f0883e;
+    }}
+    body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:1.5rem 2rem;background:var(--bg);color:var(--text);line-height:1.5}}
+    h1{{font-size:1.5rem;margin-bottom:.25rem}}
+    .subtitle{{color:var(--text-dim);font-size:.9rem;margin-bottom:1.5rem}}
+    .summary{{display:flex;flex-wrap:wrap;gap:.75rem;margin-bottom:2rem}}
+    .card{{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:.75rem 1.25rem;min-width:130px;text-align:center}}
+    .card .val{{font-size:1.8rem;font-weight:700;line-height:1.2}}
+    .card .lbl{{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim)}}
+    .card.remediated .val{{color:var(--green)}}
+    .card.regressed .val{{color:var(--red)}}
+    .card.still-vuln .val{{color:var(--orange)}}
+    .card.new .val{{color:var(--yellow)}}
+    .card.other .val{{color:var(--text-dim)}}
+    .diff-section{{margin-bottom:2rem}}
+    .diff-section h2{{font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid var(--border);padding-bottom:.4rem;margin-bottom:.5rem}}
+    .count{{font-size:.85rem;font-weight:400;color:var(--text-dim);margin-left:.5rem}}
+    .sec-remediated h2{{color:var(--green);border-color:var(--green)}}
+    .sec-regressed h2{{color:var(--red);border-color:var(--red)}}
+    .sec-still-vuln h2{{color:var(--orange);border-color:var(--orange)}}
+    .sec-new h2{{color:var(--yellow);border-color:var(--yellow)}}
+    .sec-dropped h2,.sec-still-clean h2,.sec-inconclusive h2{{color:var(--text-dim)}}
+    table{{width:100%;border-collapse:collapse;font-size:.8rem}}
+    th,td{{border:1px solid var(--border);padding:.35rem .6rem;text-align:left;vertical-align:top}}
+    th{{background:rgba(110,118,129,.1);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-dim)}}
+    .after-validated{{color:var(--red);font-weight:600}}
+    .after-not_validated{{color:var(--green);font-weight:600}}
+    .after-inconclusive{{color:var(--yellow)}}
+    .before{{color:var(--text-dim)}}
+  </style>
+</head>
+<body>
+  <h1>{title}</h1>
+  <p class="subtitle">Before: <strong>{html.escape(before_project)}</strong> &nbsp;→&nbsp; After: <strong>{html.escape(after_project)}</strong></p>
+  <div class="summary">
+    <div class="card remediated"><div class="val">{len(remediated)}</div><div class="lbl">Remediated</div></div>
+    <div class="card regressed"><div class="val">{len(regressed)}</div><div class="lbl">Regressed</div></div>
+    <div class="card still-vuln"><div class="val">{len(still_vuln)}</div><div class="lbl">Still Vulnerable</div></div>
+    <div class="card new"><div class="val">{len(new_f)}</div><div class="lbl">New Findings</div></div>
+    <div class="card other"><div class="val">{len(dropped)}</div><div class="lbl">Dropped</div></div>
+    <div class="card other"><div class="val">{len(inconc)}</div><div class="lbl">Inconclusive</div></div>
+  </div>
+  {body}
+</body>
+</html>""")
+

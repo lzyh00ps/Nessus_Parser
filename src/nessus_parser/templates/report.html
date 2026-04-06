@@ -104,6 +104,7 @@
     .badge-validated { color: var(--st-validated); background: var(--st-validated-bg); }
     .badge-not_validated { color: var(--st-not-validated); background: var(--st-not-validated-bg); }
     .badge-inconclusive { color: var(--st-inconclusive); background: var(--st-inconclusive-bg); }
+    .badge-no_playbook { color: var(--st-other); background: var(--st-other-bg); }
     .badge-other { color: var(--st-other); background: var(--st-other-bg); }
 
     /* Evidence */
@@ -130,12 +131,14 @@
     tr.row-validated td { background: var(--st-validated-bg); }
     tr.row-not_validated td { background: var(--st-not-validated-bg); }
     tr.row-inconclusive td { background: var(--st-inconclusive-bg); }
+    tr.row-no_playbook td { background: var(--st-other-bg); }
 
     /* Status cell badges */
     .st-cell { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 600; font-size: 0.75rem; }
     .st-cell-validated { color: var(--st-validated); background: var(--st-validated-bg); }
     .st-cell-not_validated { color: var(--st-not-validated); background: var(--st-not-validated-bg); }
     .st-cell-inconclusive { color: var(--st-inconclusive); background: var(--st-inconclusive-bg); }
+    .st-cell-no_playbook { color: var(--st-other); background: var(--st-other-bg); }
     .st-cell-other { color: var(--st-other); background: var(--st-other-bg); }
 
     /* No results */
@@ -233,18 +236,20 @@
 
     const sevNames = { '4': 'CRITICAL', '3': 'HIGH', '2': 'MEDIUM', '1': 'LOW', '0': 'INFO' };
 
+    const NAMED_STATUSES = new Set(['validated', 'not_validated', 'inconclusive', 'no_playbook']);
+
     function statusBadgeClass(status) {
-      if (status === 'validated' || status === 'not_validated' || status === 'inconclusive') return 'badge-' + status;
+      if (NAMED_STATUSES.has(status)) return 'badge-' + status;
       return 'badge-other';
     }
 
     function statusCellClass(status) {
-      if (status === 'validated' || status === 'not_validated' || status === 'inconclusive') return 'st-cell-' + status;
+      if (NAMED_STATUSES.has(status)) return 'st-cell-' + status;
       return 'st-cell-other';
     }
 
     function rowClass(status) {
-      if (status === 'validated' || status === 'not_validated' || status === 'inconclusive') return 'row-' + status;
+      if (NAMED_STATUSES.has(status)) return 'row-' + status;
       return '';
     }
 
@@ -301,12 +306,17 @@
           const fullOutputHtml = secondaryText
             ? `<span class="full-output-toggle" onclick="toggleFullOutput('${uid}')">Show full output (${rawOutput.split('\n').length} lines)</span>
                <div class="full-output-box" id="full-${uid}">${highlightEvidence(escapeHtml(secondaryText), terms)}</div>` : '';
+          const isPreValidated = sample.source === 'plugin_output' && !sample.command;
+          const toggleLabel = isPreValidated ? 'Show scan evidence' : 'Show command output';
+          const commandLine = isPreValidated
+            ? '<em>Validated from Nessus scan data (no live probe needed)</em>'
+            : `<strong>Command:</strong> ${escapeHtml(sample.command || '')}`;
           evidenceHtml = `
             <div class="evidence-label">Validated evidence &mdash; ${escapeHtml(String(sample.host))}:${escapeHtml(String(sample.port))}</div>
             <div class="evidence-toggle" id="toggle-${uid}" onclick="toggleEvidence('${uid}')">
-              <span class="toggle-icon">+</span> Show command output
+              <span class="toggle-icon">+</span> ${toggleLabel}
             </div>
-            <div class="evidence-box" id="box-${uid}"><strong>Command:</strong> ${escapeHtml(sample.command || '')}
+            <div class="evidence-box" id="box-${uid}">${commandLine}
 
 ${highlightedPrimary}
 ${fullOutputHtml}</div>`;
@@ -335,7 +345,7 @@ ${fullOutputHtml}</div>`;
                       <td>${escapeHtml(row.analyst_note)}</td>
                       <td>${escapeHtml(row.source)}</td>
                       <td>${escapeHtml(row.executed_at)}</td>
-                      <td><code>${escapeHtml(row.command)}</code></td>
+                      <td>${row.source === 'plugin_output' && !row.command ? '<em>Nessus scan data</em>' : `<code>${escapeHtml(row.command)}</code>`}</td>
                     </tr>
                   `).join('')}
                 </tbody>

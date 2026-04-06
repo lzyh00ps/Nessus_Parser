@@ -3,7 +3,7 @@
   "finding_name": "TLS Version 1.0 Protocol Detection",
   "service": "tls",
   "port_logic": "use_scan_port",
-  "command_template": "testssl.sh --color 0 --protocols https://{host}:{port}",
+  "command_template": "testssl.sh --color 0 {testssl_starttls_args} --protocols {host}:{port}",
   "timeout_seconds": 60,
   "allowed_ports": [],
   "blocked_ports": [],
@@ -27,11 +27,24 @@
     "TLSv1      offered",
     "TLSv1 offered"
   ],
-  "validated_if_absent": [],
+  "validated_if_absent": [
+    "unsupported protocol",
+    "wrong version number",
+    "handshake failure",
+    "tlsv1 alert protocol version",
+    "no protocols available",
+    "alert protocol version"
+  ],
   "not_validated_if": [
     "TLSv1      not offered",
     "TLSv1 not offered",
-    "ssl/tls not supported"
+    "ssl/tls not supported",
+    "unsupported protocol",
+    "wrong version number",
+    "alert protocol version",
+    "tlsv1 alert protocol version",
+    "no protocols available",
+    "handshake failure"
   ],
   "not_validated_if_present": [],
   "inconclusive_if": [

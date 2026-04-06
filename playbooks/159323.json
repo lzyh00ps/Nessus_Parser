@@ -1,0 +1,46 @@
+{
+  "plugin_id": 159323,
+  "finding_name": "Apache Shiro Default Cipher Key (CVE-2016-4437)",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "curl -k -s -I --max-time 15 -H 'Cookie: rememberMe=AAAA' https://{host}:{port}/",
+  "timeout_seconds": 20,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [
+    "curl -k -s -I --max-time 15 -H 'Cookie: rememberMe=AAAA' http://{host}:{port}/"
+  ],
+  "version_rule": {},
+  "validated_if": [
+    "rememberme=deleteme",
+    "set-cookie: rememberme=deleteme",
+    "set-cookie: rememberme"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "could not connect",
+    "host seems down",
+    "could not resolve",
+    "no route to host",
+    "network is unreachable",
+    "ssl handshake failed"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "host seems down": "host_down",
+    "could not resolve": "host_down",
+    "no route to host": "host_down",
+    "network is unreachable": "host_down"
+  },
+  "references": [
+    "https://www.tenable.com/plugins/nessus/159323"
+  ],
+  "reviewed_by": null,
+  "last_verified": null
+}

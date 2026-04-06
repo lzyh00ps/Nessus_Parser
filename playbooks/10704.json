@@ -1,9 +1,9 @@
 {
   "plugin_id": 10704,
   "finding_name": "Apache Multiviews Arbitrary Directory Listing",
-  "service": "https",
-  "port_logic": "any",
-  "command_template": "curl -k -s -m 20 -I https://{host}:{port}/",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "curl -k -s --max-time 20 http://{host}:{port}/?M=A",
   "timeout_seconds": 30,
   "allowed_ports_json": "[]",
   "blocked_ports_json": "[]",
@@ -12,36 +12,41 @@
     "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
     "nmap -Pn -sV --version-light -p {port} {host}"
   ],
-  "validated_if": [],
+  "validated_if": [
+    "index of",
+    "last modified",
+    "parent directory",
+    "name</a>",
+    "directory listing",
+    "<!doctype html public \"-//w3c//dtd html 3.2"
+  ],
   "validated_if_absent_json": [],
-  "not_validated_if": [],
+  "not_validated_if": [
+    "403 forbidden",
+    "404 not found",
+    "access denied",
+    "not found"
+  ],
   "not_validated_if_present_json": [],
   "inconclusive_if": [
-    "failed to resolve",
-    "0 hosts up",
-    "host seems down",
-    "timed out",
     "connection refused",
+    "timed out",
     "no route to host",
     "could not connect",
-    "network is unreachable",
-    "ssl handshake"
+    "host seems down",
+    "failed to resolve",
+    "network is unreachable"
   ],
   "failure_reason_map": {
-    "failed to resolve": "dns_failure",
-    "0 hosts up": "host_down",
-    "host seems down": "host_down",
-    "timed out": "port_filtered",
     "connection refused": "port_closed",
-    "no route to host": "host_unreachable",
-    "network is unreachable": "host_unreachable"
+    "timed out": "port_filtered",
+    "no route to host": "host_down",
+    "could not connect": "port_closed",
+    "host seems down": "host_down",
+    "failed to resolve": "host_down",
+    "network is unreachable": "host_down"
   },
-  "version_rule": {
-    "product_terms": [],
-    "version_patterns": [],
-    "affected_lt": "1.3.22",
-    "fixed_version": "1.3.22"
-  },
+  "version_rule": {},
   "analyst_note": "Version detection via HTTP banner/header. Fixed: 1.3.22. CVEs: CVE-2001-0731.",
   "references": [
     "https://nvd.nist.gov/vuln/detail/CVE-2001-0731",
@@ -50,5 +55,9 @@
     "http://www.nessus.org/u?c1c382bc"
   ],
   "reviewed_by": "analyst",
-  "last_verified": "2026-03-16"
+  "last_verified": "2026-03-16",
+  "fallback_commands": [
+    "curl -k -s --max-time 20 https://{host}:{port}/?M=A",
+    "curl -k -s --max-time 20 http://{host}:{port}/?D=A"
+  ]
 }

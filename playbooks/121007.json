@@ -1,0 +1,48 @@
+{
+  "plugin_id": 121007,
+  "finding_name": "SSH Known Hard Coded Private Keys",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "ssh-keyscan -p {port} -T 10 {host} 2>&1",
+  "timeout_seconds": 15,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "version_rule": {},
+  "validated_if": [
+    "ssh-rsa",
+    "ecdsa-sha2",
+    "ssh-ed25519",
+    "ssh-dss"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "connection refused",
+    "timed out",
+    "filtered"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "could not connect",
+    "host seems down",
+    "filtered",
+    "no route to host"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "host seems down": "host_down",
+    "no route to host": "host_down",
+    "filtered": "port_filtered"
+  },
+  "references": [
+    "https://github.com/sec-consult/houseofkeys"
+  ],
+  "reviewed_by": null,
+  "last_verified": null
+}

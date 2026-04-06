@@ -1,0 +1,48 @@
+{
+  "plugin_id": 187201,
+  "finding_name": "OpenSSH < 9.6 Multiple Vulnerabilities",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "nmap -Pn -sV --version-light -p {port} {host}",
+  "timeout_seconds": 30,
+  "allowed_ports": [
+    22
+  ],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {
+    "product_terms": [
+      "openssh"
+    ],
+    "version_patterns": [
+      "OpenSSH[_ /]([0-9]+\\.[0-9]+(?:p[0-9]+)?)"
+    ],
+    "affected_lt": "9.6",
+    "fixed_version": "9.6"
+  },
+  "validated_if": [],
+  "validated_if_absent": [],
+  "not_validated_if": [],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "operation not permitted"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "host_down",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "operation not permitted": "inconclusive"
+  },
+  "references": [
+    "https://nmap.org/book/man-version-detection.html",
+    "https://www.tenable.com/plugins/nessus/187201"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-04-05"
+}

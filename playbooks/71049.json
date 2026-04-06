@@ -1,0 +1,43 @@
+{
+  "plugin_id": 71049,
+  "finding_name": "SSH Weak MAC Algorithms Enabled",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "sh -c 'out=$(nmap -Pn --script ssh2-enum-algos -p {port} {host} 2>&1); printf \"%s\\n\" \"$out\"; printf \"%s\\n\" \"$out\" | tr \"[:upper:]\" \"[:lower:]\" | grep -Eqi \"hmac-md5$|hmac-md5-96|hmac-sha1-96|hmac-ripemd160|umac-32|umac-64\" && echo WEAK_MAC_ENABLED || echo WEAK_MAC_DISABLED'",
+  "timeout_seconds": 30,
+  "allowed_ports": [
+    22
+  ],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "weak_mac_enabled"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "weak_mac_disabled"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "failed to resolve",
+    "0 hosts up",
+    "host seems down",
+    "timed out",
+    "operation not permitted"
+  ],
+  "failure_reason_map": {
+    "failed to resolve": "host_down",
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "timed out": "port_filtered",
+    "operation not permitted": "inconclusive"
+  },
+  "references": [
+    "https://nmap.org/nsedoc/scripts/ssh2-enum-algos.html",
+    "https://www.tenable.com/plugins/nessus/71049"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-04-05"
+}

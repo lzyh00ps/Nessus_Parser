@@ -1,0 +1,52 @@
+{
+  "plugin_id": 89058,
+  "finding_name": "SSL DROWN Attack Vulnerability",
+  "service": "tls",
+  "port_logic": "use_scan_port",
+  "command_template": "testssl.sh --color 0 {testssl_starttls_args} --drown {host}:{port}",
+  "timeout_seconds": 60,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {
+    "21": "ftp",
+    "25": "smtp",
+    "110": "pop3",
+    "143": "imap",
+    "389": "ldap",
+    "587": "smtp",
+    "5432": "postgres"
+  },
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "vulnerable"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "not vulnerable",
+    "not tested",
+    "ssl2 not offered",
+    "sslv2 not offered"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "no route to host",
+    "bio_lookup_ex:system lib",
+    "temporary failure in name resolution"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "no route to host": "host_down",
+    "bio_lookup_ex:system lib": "host_down",
+    "temporary failure in name resolution": "host_down"
+  },
+  "references": [
+    "https://testssl.sh",
+    "https://www.tenable.com/plugins/nessus/89058"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-04-05"
+}

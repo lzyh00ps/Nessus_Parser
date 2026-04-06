@@ -1,0 +1,47 @@
+{
+  "plugin_id": 57608,
+  "finding_name": "SMB Signing Disabled",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "nmap -Pn --script smb-security-mode -p {port} {host}",
+  "timeout_seconds": 30,
+  "allowed_ports": [
+    445,
+    139
+  ],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "message_signing: disabled"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "message_signing: required",
+    "message_signing: supported"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "0 hosts up",
+    "host seems down",
+    "failed to resolve",
+    "timed out",
+    "connection refused",
+    "no route to host"
+  ],
+  "failure_reason_map": {
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "failed to resolve": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_down"
+  },
+  "references": [
+    "https://nmap.org/nsedoc/scripts/smb-security-mode.html",
+    "https://www.tenable.com/plugins/nessus/57608"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-04-05"
+}

@@ -1,0 +1,48 @@
+{
+  "plugin_id": 299397,
+  "finding_name": "Apache Tomcat 9.0.0.M1 < 9.0.113 multiple vulnerabilities",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "curl -k -s -I --max-time 15 http://{host}:{port}/",
+  "timeout_seconds": 20,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "version_rule": {
+    "product_terms": [
+      "apache tomcat",
+      "tomcat"
+    ],
+    "version_patterns": [
+      "apache tomcat/(9\\.0\\.\\d+)",
+      "tomcat.{0,40}(9\\.0\\.\\d+)"
+    ],
+    "fixed_version": "9.0.113"
+  },
+  "validated_if": [],
+  "validated_if_absent": [],
+  "not_validated_if": [],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "could not connect",
+    "host seems down",
+    "failed to connect",
+    "no route to host"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "host seems down": "host_down",
+    "no route to host": "host_down",
+    "could not connect": "port_closed",
+    "failed to connect": "port_closed"
+  },
+  "references": [],
+  "reviewed_by": null,
+  "last_verified": null
+}

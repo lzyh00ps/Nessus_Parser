@@ -1,9 +1,9 @@
 {
   "plugin_id": 26928,
-  "finding_name": "ssl_weak_supported_ciphers",
+  "finding_name": "SSL Weak Cipher Suites Supported",
   "service": "tls",
   "port_logic": "use_scan_port",
-  "command_template": "openssl s_client -connect {host}:{port} {openssl_tls_args} -brief </dev/null",
+  "command_template": "sh -c 'out=$(openssl s_client -connect {host}:{port} {openssl_tls_args} -cipher \"LOW:MEDIUM:@SECLEVEL=0\" </dev/null 2>&1); echo \"$out\"; echo \"$out\" | grep -qi \"cipher\\|connected\" && ! echo \"$out\" | grep -qi \"no suitable cipher\\|handshake failure\\|unsupported\" && echo WEAK_CIPHER_ACCEPTED || echo WEAK_CIPHER_REJECTED'",
   "timeout_seconds": 30,
   "allowed_ports": [],
   "blocked_ports": [],
@@ -18,24 +18,41 @@
     "5432": "postgres",
     "587": "smtp"
   },
-  "validated_if": [],
+  "validated_if": [
+    "weak_cipher_accepted",
+    "cipher: des-",
+    "cipher: rc4-",
+    "cipher: exp-",
+    "cipher: null-",
+    "export ciphers",
+    "weak",
+    "low strength",
+    "des cbc",
+    "rc4 (md5)",
+    "rc4 (sha)"
+  ],
   "validated_if_absent": [],
   "not_validated_if": [
-    "unsupported protocol",
-    "handshake failure"
+    "weak_cipher_rejected"
   ],
   "not_validated_if_present": [],
   "inconclusive_if": [
     "connection refused",
     "timed out",
-    "no route to host"
+    "no route to host",
+    "network is unreachable"
   ],
   "failure_reason_map": {
     "connection refused": "port_closed",
     "timed out": "port_filtered",
-    "no route to host": "host_down"
+    "no route to host": "host_down",
+    "network is unreachable": "host_down"
   },
   "references": [],
   "reviewed_by": null,
-  "last_verified": null
+  "last_verified": null,
+  "fallback_commands": [
+    "testssl.sh --color 0 {testssl_starttls_args} --cipher-per-proto {host}:{port}",
+    "nmap -Pn --script ssl-enum-ciphers -p {port} {host}"
+  ]
 }

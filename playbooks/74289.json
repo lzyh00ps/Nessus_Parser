@@ -1,0 +1,51 @@
+{
+  "plugin_id": 74289,
+  "finding_name": "Sendmail < 8.14.9 Multiple Vulnerabilities",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "nmap -Pn -sV --version-intensity 5 -p {port} {host}",
+  "timeout_seconds": 30,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "fallback_commands": [
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "validated_if": [],
+  "validated_if_absent": [],
+  "not_validated_if": [],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "filtered",
+    "closed",
+    "host seems down",
+    "failed to resolve",
+    "timed out",
+    "0 hosts up",
+    "no route to host"
+  ],
+  "failure_reason_map": {
+    "filtered": "port_filtered",
+    "closed": "port_closed",
+    "host seems down": "host_down",
+    "failed to resolve": "host_down",
+    "timed out": "port_filtered",
+    "0 hosts up": "host_down",
+    "no route to host": "host_down"
+  },
+  "version_rule": {
+    "product_terms": [
+      "sendmail",
+      "installed version"
+    ],
+    "version_patterns": [
+      "installed version\\s*:\\s*([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "sendmail[/ ]([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "sendmail\\s+([0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "affected_lt": "8.14.9"
+  },
+  "analyst_note": "Sendmail SMTP banner version grab via nmap -sV. Fixed in 8.14.9.",
+  "references": [],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-04-06"
+}

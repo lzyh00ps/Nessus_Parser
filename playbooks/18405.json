@@ -1,0 +1,49 @@
+{
+  "plugin_id": 18405,
+  "finding_name": "Remote Desktop Protocol Server Man-in-the-Middle Weakness",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "nmap -Pn --script rdp-enum-encryption -p {port} {host}",
+  "timeout_seconds": 30,
+  "allowed_ports": [
+    3389
+  ],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "rdp security layer (rdpbcp): success",
+    "rdp security layer: success",
+    "rdp security layer"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "credssp (nla): success",
+    "tls: success",
+    "ssl: success"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "0 hosts up",
+    "host seems down",
+    "failed to resolve",
+    "timed out",
+    "connection refused",
+    "no route to host"
+  ],
+  "failure_reason_map": {
+    "0 hosts up": "host_down",
+    "host seems down": "host_down",
+    "failed to resolve": "host_down",
+    "timed out": "port_filtered",
+    "connection refused": "port_closed",
+    "no route to host": "host_down"
+  },
+  "references": [
+    "https://nmap.org/nsedoc/scripts/rdp-enum-encryption.html",
+    "https://www.tenable.com/plugins/nessus/18405"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-04-05"
+}

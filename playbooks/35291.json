@@ -1,0 +1,55 @@
+{
+  "plugin_id": 35291,
+  "finding_name": "SSL Certificate Signed Using Weak Hashing Algorithm (SHA-1)",
+  "service": "tls",
+  "port_logic": "use_scan_port",
+  "command_template": "testssl.sh --color 0 {testssl_starttls_args} -S {host}:{port}",
+  "timeout_seconds": 60,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {
+    "21": "ftp",
+    "25": "smtp",
+    "110": "pop3",
+    "143": "imap",
+    "389": "ldap",
+    "587": "smtp",
+    "5432": "postgres"
+  },
+  "fallback_commands": [
+    "openssl s_client -connect {host}:{port} {openssl_tls_args} -brief </dev/null 2>&1 | openssl x509 -noout -text 2>/dev/null | grep -i 'signature algorithm'"
+  ],
+  "version_rule": {},
+  "validated_if": [
+    "sha1 with rsa",
+    "sha1withrsa",
+    "sha-1withrsa"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "sha256",
+    "sha384",
+    "sha512"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "no route to host",
+    "bio_lookup_ex:system lib",
+    "temporary failure in name resolution"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "no route to host": "host_down",
+    "bio_lookup_ex:system lib": "host_down",
+    "temporary failure in name resolution": "host_down"
+  },
+  "references": [
+    "https://testssl.sh",
+    "https://www.tenable.com/plugins/nessus/35291"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-04-05"
+}

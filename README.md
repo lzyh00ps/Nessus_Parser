@@ -150,16 +150,27 @@ nessus-parser report-all --output data/runtime/reports/results.csv
 
 | Status | Meaning |
 |---|---|
-| `validated` | Finding confirmed — detected version is in the vulnerable range |
-| `not_validated` | Likely false positive — version is patched or product mismatch detected |
-| `inconclusive` | Command ran but output could not determine status |
-| `port_closed` | TCP connection refused — service not listening on that port |
-| `port_filtered` | Connection timed out — port is blocked or host is firewalled |
-| `host_down` | Host unreachable (ICMP / routing failure) |
-| `host_unreachable` | No route to host |
+| `validated` | Finding confirmed — live probe detected a vulnerable version or behaviour |
+| `not_validated` | Finding not confirmed — version is patched, product mismatch, or target unreachable during re-test |
+| `inconclusive` | Probe ran but output was ambiguous — SSL handshake failure, empty reply, or no pattern matched |
+| `error` | Command failed with an unmapped exit code or exception |
+| `skipped` | Target excluded — port not in allowed list or protocol mismatch |
+| `no_playbook` | No playbook exists for this plugin ID |
+
+> **Unreachable targets:** When the live probe determines the host is down or the port is filtered/closed, the result is recorded as `not_validated` with the network reason (`host_down`, `port_filtered`, `port_closed`). This distinguishes "we tested it and couldn't reach it" from a genuine false positive.
+
+### Reason codes for `not_validated`
+
+| Reason | Meaning |
+|---|---|
+| `host_down` | Host did not respond — ICMP unreachable or routing failure |
+| `port_filtered` | Connection timed out — port blocked by firewall |
+| `port_closed` | TCP RST received — service not running on that port |
+| `port_not_ssl` | Port does not speak SSL/TLS (e.g. RDP on 3389 probed for certificates) |
 | `dns_failure` | Hostname could not be resolved |
+| `host_unreachable` | No route to host |
+| `not_validated` | Version detected and confirmed patched / above fix threshold |
 | `auth_required` | Service returned 401/403 — credentials needed to verify |
-| `error` | Command failed with no specific reason mapped |
 
 ---
 
@@ -347,6 +358,80 @@ Host-level data is never stored unless you explicitly opt in:
 
 ---
 
+## Projects
+
+Every scan and validation run belongs to a **project**. Projects keep client data isolated from each other inside the shared database.
+
+### Project naming convention
+
+Use the format `{client}_{scantype}_{YYYYMMDD}`:
+
+```
+nomura_initial_20260406
+nomura_retest_20260715
+clientb_initial_20261001
+```
+
+Project names are **automatically normalised** — lowercase, spaces and hyphens replaced with underscores. If your input differs from the normalised form a notice is printed:
+
+```
+NOTICE: Project name normalised: 'Nomura-Global' → 'nomura_global'
+```
+
+### Warning when no project is specified
+
+On write commands (`import-scan`, `validate-all`, `validate`, `override-result`, `bulk-override`), omitting `-p` falls back to the shared `default` project and prints a visible warning:
+
+```
+WARNING: No project specified — using "default".
+         Use -p <name> for real engagements, e.g.:
+         nessus-parser import-scan scan.nessus --store-findings -p clientname_20260406
+```
+
+Never use `default` for real engagements — it is shared and easy to accidentally overwrite.
+
+### Creating vs appending to a project
+
+When running `import-scan --store-findings`, the tool tells you whether it is creating a new project or appending to one that already exists:
+
+```
+INFO: Creating new project 'nomura_initial_20260406'
+INFO: Appending to existing project 'nomura_initial_20260406' (currently 1,240 findings)
+```
+
+### What is isolated per project
+
+| Data | Isolated? |
+|------|-----------|
+| Findings (hosts, ports, plugin output) | ✅ per project |
+| Validation results | ✅ per project |
+| Plugin metadata (names, descriptions) | ❌ shared — global |
+| Playbooks | ❌ shared — global |
+
+### Full engagement workflow
+
+```bash
+# Initial scan
+nessus-parser import-scan scan_apr2026.nessus --store-findings -p nomura_apr2026
+for f in playbooks/*.json; do nessus-parser import-playbook "$f"; done
+nessus-parser validate-all -p nomura_apr2026 --min-severity medium -o reports/nomura_apr2026.html
+
+# After client patches — retest with new scan file
+nessus-parser import-scan scan_jul2026.nessus --store-findings -p nomura_jul2026
+nessus-parser validate-all -p nomura_jul2026 --min-severity medium -o reports/nomura_jul2026.html
+
+# Diff original vs retest
+nessus-parser diff-projects --before nomura_apr2026 --after nomura_jul2026 -o reports/nomura_diff.html
+
+# List all projects
+nessus-parser list-projects
+
+# Clean up a project
+nessus-parser sanitize-db -p nomura_apr2026
+```
+
+---
+
 ## Deployment
 
 ### Single analyst workstation
@@ -360,9 +445,9 @@ source .venv/bin/activate
 Per engagement:
 
 ```bash
-nessus-parser -f client_scan.nessus --validate-all --min-severity medium
-nessus-parser report-html --output reports/$(date +%Y%m%d)_report.html
-nessus-parser sanitize-db    # clean up after engagement
+nessus-parser import-scan client_scan.nessus --store-findings -p clientname_20260406
+nessus-parser validate-all -p clientname_20260406 --min-severity medium -o reports/clientname_20260406.html
+nessus-parser sanitize-db -p clientname_20260406    # clean up after engagement
 ```
 
 ### Offline / air-gapped environments

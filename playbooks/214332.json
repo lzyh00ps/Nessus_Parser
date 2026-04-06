@@ -3,7 +3,7 @@
   "finding_name": "SonarSource SonarQube Server < 9.9.4 / 10.x < 10.4 Information Disclosure (CVE-2024-38460)",
   "service": "https",
   "port_logic": "any",
-  "command_template": "curl -k -s -m 20 https://{host}:{port}/api/system/status",
+  "command_template": "curl -k -s --max-time 15 https://{host}:{port}/api/server/version",
   "timeout_seconds": 30,
   "allowed_ports_json": "[]",
   "blocked_ports_json": "[]",
@@ -37,14 +37,12 @@
     "network is unreachable": "host_unreachable"
   },
   "version_rule": {
-    "product_terms": [
-      "sonarqube",
-      "sonar"
-    ],
+    "product_terms": [],
     "version_patterns": [
+      "installed version\\s*:\\s*([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)",
+      "^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)$",
       "\"version\":\"([0-9]+\\.[0-9]+\\.[0-9.]+)\"",
-      "SonarQube[/ ]([0-9]+\\.[0-9.]+)",
-      "sonarqube[/ ]([0-9]+\\.[0-9.]+)"
+      "([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)"
     ],
     "affected_lt": "9.9.4",
     "fixed_version": "9.9.4"

@@ -1,0 +1,43 @@
+{
+  "plugin_id": 214331,
+  "finding_name": "SonarSource SonarQube Server < 9.9.5 / 10.x < 10.5 GitHub Integration JWT Exfiltration (CVE-2024-47910)",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "curl -k -s --max-time 15 https://{host}:{port}/api/server/version",
+  "timeout_seconds": 20,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [
+    "curl -k -s --max-time 15 http://{host}:{port}/api/server/version"
+  ],
+  "version_rule": {
+    "product_terms": [],
+    "version_patterns": [
+      "installed version\\s*:\\s*([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)",
+      "^([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)$",
+      "([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)"
+    ],
+    "fixed_version": "9.9.5 / 10.5"
+  },
+  "validated_if": [],
+  "validated_if_absent": [],
+  "not_validated_if": [],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "could not connect",
+    "host seems down",
+    "could not resolve"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "host seems down": "host_down",
+    "could not resolve": "host_down"
+  },
+  "references": [],
+  "reviewed_by": null,
+  "last_verified": null
+}

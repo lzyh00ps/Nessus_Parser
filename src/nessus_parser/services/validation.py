@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import csv
 import subprocess
 import re
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from nessus_parser.core.colors import (
@@ -42,50 +44,34 @@ def validate_plugin(db_path: Path, plugin_id: int, project_name: str = "default"
 
     results: list[tuple[str, str | None, str, int | None]] = []
     skipped: list[tuple[str, int | None, str]] = []
+
+    # Probe all targets concurrently — commands are I/O-bound subprocesses.
+    # Pass plugin_output so targets resolvable from scan evidence skip live probing.
+    with ThreadPoolExecutor(max_workers=_VALIDATION_MAX_WORKERS) as executor:
+        futures = [
+            (
+                row[0],
+                executor.submit(
+                    _probe_target, playbook,
+                    str(row[1]), row[2] or 0, row[3],
+                    row[4] if len(row) > 4 else None,
+                ),
+            )
+            for row in targets
+        ]
+        probes = [(fid, f.result()) for fid, f in futures]
+
     connection = connect(db_path)
     try:
-        for finding_id, host, port, protocol in targets:
-            applicable, skip_reason = _is_target_applicable(playbook, port, protocol)
-            if not applicable:
-                skipped.append((host, port, skip_reason or "not_applicable"))
-                connection.execute(
-                    """
-                INSERT INTO validation_runs (
-                    finding_id,
-                    plugin_id,
-                    host,
-                    port,
-                    command,
-                    status,
-                    reason,
-                    analyst_note,
-                    source,
-                    stdout,
-                    stderr,
-                    exit_code,
-                    project_name
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        finding_id,
-                        plugin_id,
-                        host,
-                        port,
-                        "",
-                        "skipped",
-                        skip_reason or "not_applicable",
-                        None,
-                        "automation",
-                        "",
-                        "",
-                        None,
-                        project_name,
-                    ),
-                )
-                continue
-            command, execution, status, reason = _execute_playbook_command(
-                playbook, host, port or 0, protocol
-            )
+        connection.execute(
+            "DELETE FROM validation_runs WHERE plugin_id = ? AND project_name = ? AND source != 'manual'",
+            (plugin_id, project_name),
+        )
+        for finding_id, probe in probes:
+            host = str(probe["host"])
+            port = probe.get("port")
+            status = str(probe["status"])
+            reason = probe.get("reason")
             connection.execute(
                 """
                 INSERT INTO validation_runs (
@@ -109,18 +95,21 @@ def validate_plugin(db_path: Path, plugin_id: int, project_name: str = "default"
                     plugin_id,
                     host,
                     port,
-                    command,
+                    probe["command"],
                     status,
                     reason,
                     None,
-                    "automation",
-                    execution["stdout"],
-                    execution["stderr"],
-                    execution["exit_code"],
+                    str(probe.get("source", "automation")),
+                    probe["stdout"],
+                    probe["stderr"],
+                    probe["exit_code"],
                     project_name,
                 ),
             )
-            results.append((status, reason, host, port))
+            if status == "skipped":
+                skipped.append((host, port, reason or "not_applicable"))
+            else:
+                results.append((status, reason, host, port))
         connection.commit()
     finally:
         connection.close()
@@ -174,46 +163,35 @@ def validate_scan_file(
         "error": [],
     }
 
+    # Probe all targets concurrently — commands are I/O-bound subprocesses.
+    # Pass plugin_output so targets resolvable from scan evidence skip live probing.
+    with ThreadPoolExecutor(max_workers=_VALIDATION_MAX_WORKERS) as executor:
+        futures = [
+            executor.submit(
+                _probe_target, playbook,
+                str(t["host"]), int(t["port"]), t.get("protocol"),
+                t.get("plugin_output"),
+            )
+            for t in scan_data["targets"]
+        ]
+        probes = [f.result() for f in futures]
+
     connection = connect(db_path) if persist_results else None
     try:
-        for target in scan_data["targets"]:
-            host = str(target["host"])
-            port = int(target["port"])
-            protocol = target.get("protocol")
-            applicable, skip_reason = _is_target_applicable(playbook, port, protocol)
-            if not applicable:
-                if connection is not None:
-                    _insert_validation_run(
-                        connection,
-                        plugin_id=plugin_id,
-                        host=host,
-                        port=port,
-                        command="",
-                        status="skipped",
-                        reason=skip_reason or "not_applicable",
-                        stdout="",
-                        stderr="",
-                        exit_code=None,
-                        source="automation",
-                        project_name=project_name,
-                    )
-                groups["skipped"].append(f"{host}:{port}")
-                results.append(
-                    {
-                        "host": host,
-                        "port": port,
-                        "status": "skipped",
-                        "reason": skip_reason or "not_applicable",
-                        "command": "",
-                        "stdout": "",
-                        "stderr": "",
-                    }
-                )
-                continue
-
-            command, execution, status, reason = _execute_playbook_command(
-                playbook, host, port, protocol
+        if connection is not None:
+            connection.execute(
+                "DELETE FROM validation_runs WHERE plugin_id = ? AND project_name = ? AND source != 'manual'",
+                (plugin_id, project_name),
             )
+        for probe in probes:
+            host = str(probe["host"])
+            port = int(probe["port"])
+            status = str(probe["status"])
+            reason = probe.get("reason")
+            command = str(probe["command"])
+            stdout = str(probe["stdout"])
+            stderr = str(probe["stderr"])
+            exit_code = probe.get("exit_code")
             if connection is not None:
                 _insert_validation_run(
                     connection,
@@ -223,10 +201,10 @@ def validate_scan_file(
                     command=command,
                     status=status,
                     reason=reason,
-                    stdout=str(execution["stdout"]),
-                    stderr=str(execution["stderr"]),
-                    exit_code=execution["exit_code"],
-                    source="automation",
+                    stdout=stdout,
+                    stderr=stderr,
+                    exit_code=exit_code,
+                    source=str(probe.get("source", "automation")),
                     project_name=project_name,
                 )
             groups.setdefault(status, []).append(f"{host}:{port}")
@@ -237,8 +215,8 @@ def validate_scan_file(
                     "status": status,
                     "reason": reason,
                     "command": command,
-                    "stdout": str(execution["stdout"]),
-                    "stderr": str(execution["stderr"]),
+                    "stdout": stdout,
+                    "stderr": stderr,
                 }
             )
         if connection is not None:
@@ -365,6 +343,34 @@ def get_latest_validation_results(
         connection.close()
 
 
+def get_project_latest_results(
+    db_path: Path,
+    project_name: str,
+) -> dict[tuple[int, str, int | None], str]:
+    """Return the latest status per (plugin_id, host, port) for a project.
+
+    Used by the diff report to compare two projects side-by-side.
+    """
+    connection = connect(db_path)
+    try:
+        rows = connection.execute(
+            """
+            SELECT vr.plugin_id, vr.host, vr.port, vr.status
+            FROM validation_runs vr
+            INNER JOIN (
+                SELECT plugin_id, host, port, MAX(id) AS latest_id
+                FROM validation_runs
+                WHERE project_name = ?
+                GROUP BY plugin_id, host, port
+            ) latest ON vr.id = latest.latest_id
+            """,
+            (project_name,),
+        ).fetchall()
+        return {(int(r[0]), str(r[1]), r[2]): str(r[3]) for r in rows}
+    finally:
+        connection.close()
+
+
 def list_projects(db_path: Path) -> list[tuple[str, int, str]]:
     connection = connect(db_path)
     try:
@@ -413,6 +419,68 @@ def override_result(
         return True
     finally:
         connection.close()
+
+
+def bulk_override(
+    db_path: Path,
+    csv_path: Path,
+    project_name: str = "default",
+) -> tuple[int, list[str]]:
+    """Apply manual overrides from a CSV file.
+
+    Expected columns (in any order): plugin_id, host, port, status, reason, note
+    The 'reason' and 'note' columns are optional.
+
+    Returns (success_count, list_of_error_strings).
+    """
+    _VALID_STATUSES = {"validated", "not_validated", "inconclusive", "skipped", "error"}
+    errors: list[str] = []
+    rows: list[dict] = []
+
+    with csv_path.open(newline="", encoding="utf-8") as fh:
+        reader = csv.DictReader(fh)
+        for line_num, row in enumerate(reader, start=2):
+            try:
+                plugin_id = int(row["plugin_id"])
+                host = row["host"].strip()
+                port = int(row["port"]) if row.get("port", "").strip() else None
+                status = row["status"].strip().lower()
+                if status not in _VALID_STATUSES:
+                    errors.append(f"line {line_num}: invalid status '{status}'")
+                    continue
+                reason = row.get("reason", "").strip() or None
+                note = row.get("note", "").strip() or None
+                rows.append({"plugin_id": plugin_id, "host": host, "port": port,
+                             "status": status, "reason": reason, "note": note})
+            except (KeyError, ValueError) as exc:
+                errors.append(f"line {line_num}: {exc}")
+
+    if not rows:
+        return 0, errors
+
+    connection = connect(db_path)
+    try:
+        for r in rows:
+            _insert_validation_run(
+                connection,
+                plugin_id=r["plugin_id"],
+                host=r["host"],
+                port=r["port"],
+                command="",
+                status=r["status"],
+                reason=r["reason"],
+                stdout="",
+                stderr="",
+                exit_code=None,
+                source="manual",
+                analyst_note=r["note"],
+                project_name=project_name,
+            )
+        connection.commit()
+    finally:
+        connection.close()
+
+    return len(rows), errors
 
 
 # Sentinel value used as finding_id for validation_runs that are not linked to a
@@ -470,6 +538,93 @@ def _insert_validation_run(
             project_name,
         ),
     )
+
+
+def persist_no_playbook_findings(
+    db_path: Path,
+    scan_path: Path,
+    plugin_ids: list[int],
+    project_name: str = "default",
+) -> int:
+    """Insert validation_runs with status='no_playbook' for scan findings that have no playbook.
+
+    Also upserts plugin metadata so the HTML report can display name/severity.
+    Returns the total number of host/port entries recorded.
+    """
+    connection = connect(db_path)
+    recorded = 0
+    try:
+        for plugin_id in plugin_ids:
+            scan_data = load_scan_targets(scan_path, plugin_id)
+            if scan_data is None:
+                continue
+            connection.execute(
+                "DELETE FROM validation_runs WHERE plugin_id = ? AND project_name = ? AND source != 'manual'",
+                (plugin_id, project_name),
+            )
+            connection.execute(
+                """
+                INSERT INTO plugins (
+                    plugin_id, plugin_name, severity, synopsis, description, solution, source
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(plugin_id) DO UPDATE SET
+                    plugin_name = excluded.plugin_name,
+                    severity    = COALESCE(excluded.severity,    plugins.severity),
+                    synopsis    = COALESCE(excluded.synopsis,    plugins.synopsis),
+                    description = COALESCE(excluded.description, plugins.description),
+                    solution    = COALESCE(excluded.solution,    plugins.solution),
+                    source      = excluded.source
+                """,
+                (
+                    plugin_id,
+                    scan_data["plugin_name"],
+                    scan_data.get("severity"),
+                    scan_data.get("synopsis"),
+                    scan_data.get("description"),
+                    scan_data.get("solution"),
+                    f"scan:{scan_path.name}",
+                ),
+            )
+            for target in list(scan_data["targets"]):
+                _insert_validation_run(
+                    connection,
+                    plugin_id=plugin_id,
+                    host=str(target["host"]),
+                    port=int(target["port"]),
+                    command="",
+                    status="no_playbook",
+                    reason="no_playbook",
+                    stdout="",
+                    stderr="",
+                    exit_code=None,
+                    source="automation",
+                    project_name=project_name,
+                )
+                recorded += 1
+        connection.commit()
+    finally:
+        connection.close()
+    return recorded
+
+
+def list_validated_plugin_ids(db_path: Path, project_name: str | None = None) -> list[int]:
+    """Return all distinct plugin_ids that have at least one validation_run for the given project."""
+    connection = connect(db_path)
+    try:
+        return [
+            row[0]
+            for row in connection.execute(
+                """
+                SELECT DISTINCT plugin_id
+                FROM validation_runs
+                WHERE (? IS NULL OR project_name = ?)
+                ORDER BY plugin_id ASC
+                """,
+                (project_name, project_name),
+            )
+        ]
+    finally:
+        connection.close()
 
 
 def _format_scan_validation_output(
@@ -672,6 +827,92 @@ def _status_rank(status: str) -> int:
     return order.get(status, 99)
 
 
+_VALIDATION_MAX_WORKERS = 10
+
+
+def _probe_target(
+    playbook: dict[str, object],
+    host: str,
+    port: int,
+    protocol: str | None,
+    plugin_output: str | None = None,
+) -> dict[str, object]:
+    """Run applicability check + playbook command for one target. Thread-safe.
+
+    Always attempts a live network probe first to independently confirm the
+    finding still exists.  Only falls back to *plugin_output* (Nessus scan data)
+    when the live probe is inconclusive due to network conditions (host down,
+    port filtered, SSL handshake failure, etc.) and plugin_output can provide
+    a conclusive verdict.
+    """
+    applicable, skip_reason = _is_target_applicable(playbook, port, protocol)
+    if not applicable:
+        return {
+            "host": host, "port": port,
+            "status": "skipped", "reason": skip_reason or "not_applicable",
+            "command": "", "stdout": "", "stderr": "", "exit_code": None,
+            "source": "automation",
+        }
+    try:
+        command, execution, status, reason = _execute_playbook_command(playbook, host, port, protocol)
+    except Exception as exc:
+        return {
+            "host": host, "port": port,
+            "status": "error", "reason": str(exc),
+            "command": "", "stdout": "", "stderr": str(exc), "exit_code": None,
+            "source": "automation",
+        }
+
+    # If the live probe was conclusive, use it.
+    if status in ("validated", "not_validated"):
+        return {
+            "host": host, "port": port,
+            "status": status, "reason": reason, "command": command,
+            "stdout": str(execution["stdout"]),
+            "stderr": str(execution["stderr"]),
+            "exit_code": execution["exit_code"],
+            "source": "automation",
+        }
+
+    # If the host or port is unreachable, mark as not_validated with the
+    # network reason so it is clear the finding could not be re-tested.
+    _UNREACHABLE = {"host_down", "port_filtered", "port_closed"}
+    effective_reason = reason or status
+    if status in _UNREACHABLE or (status == "inconclusive" and effective_reason in _UNREACHABLE):
+        return {
+            "host": host, "port": port,
+            "status": "not_validated", "reason": effective_reason, "command": command,
+            "stdout": str(execution["stdout"]),
+            "stderr": str(execution["stderr"]),
+            "exit_code": execution["exit_code"],
+            "source": "automation",
+        }
+
+    # Live probe was inconclusive for other reasons (SSL error, empty reply, etc.).
+    # Fall back to Nessus plugin_output if it can give a conclusive answer.
+    if plugin_output and plugin_output.strip():
+        pre_status, pre_reason = _derive_status(
+            playbook, plugin_output.strip(), "", exit_code=None
+        )
+        if pre_status in ("validated", "not_validated"):
+            return {
+                "host": host, "port": port,
+                "status": pre_status, "reason": pre_reason,
+                "command": "", "stdout": plugin_output.strip(), "stderr": "",
+                "exit_code": None, "source": "plugin_output",
+            }
+
+    # Return the live probe result (inconclusive/error) as-is.
+    return {
+        "host": host, "port": port,
+        "status": status, "reason": reason, "command": command,
+        "stdout": str(execution["stdout"]),
+        "stderr": str(execution["stderr"]),
+        "exit_code": execution["exit_code"],
+        "source": "automation",
+    }
+
+
 def _run_command(command: str, timeout_seconds: int) -> dict[str, object]:
     try:
         completed = subprocess.run(
@@ -775,6 +1016,19 @@ def _derive_status(
         if validated_absent_terms and all(term and term not in haystack for term in validated_absent_terms):
             return "validated", None
         return "inconclusive", None
+
+    # Map well-known curl exit codes to structured statuses before falling back to "error".
+    _CURL_EXIT_MAP: dict[int, tuple[str, str]] = {
+        6:  ("inconclusive", "host_down"),       # Could not resolve host
+        7:  ("port_closed",  "port_closed"),     # Failed to connect
+        28: ("port_filtered", "port_filtered"),  # Timeout
+        35: ("inconclusive", "ssl_handshake"),   # SSL connect error
+        52: ("inconclusive", "empty_reply"),     # Empty reply from server
+        56: ("inconclusive", "network_error"),   # Recv failure
+    }
+    if exit_code is not None and exit_code in _CURL_EXIT_MAP:
+        mapped_status, mapped_reason = _CURL_EXIT_MAP[exit_code]
+        return mapped_status, mapped_reason
 
     return _map_reason(playbook, haystack, default="error"), _map_reason(playbook, haystack, default=None)
 
@@ -920,7 +1174,10 @@ def _derive_version_rule_status(
 
     extracted_version = None
     for pattern in version_rule.get("version_patterns", []):
-        match = re.search(str(pattern), haystack, re.IGNORECASE)
+        try:
+            match = re.search(str(pattern), haystack, re.IGNORECASE)
+        except re.error:
+            continue
         if match:
             extracted_version = match.group(1)
             break
@@ -1016,3 +1273,110 @@ _KNOWN_TLS_PORTS = {
     2083, 2087, 2096, 2376, 3269, 3389, 5061, 5349, 5432, 5500, 5986,
     6363, 6443, 6514, 6697, 8172, 8443, 8531, 8883, 9200, 9443, 10443,
 }
+
+
+def get_scan_coverage(
+    db_path: Path,
+    scan_path: Path,
+    project_name: str | None = None,
+    min_severity: int | None = None,
+    include_informational: bool = True,
+) -> dict[str, object]:
+    """Return coverage statistics for a scan file against the loaded playbooks.
+
+    Returned dict keys
+    ------------------
+    total_plugins       int  — distinct plugin IDs in the scan
+    total_targets       int  — total host:port findings
+    has_playbook        int  — plugins with a playbook
+    no_playbook         int  — plugins without a playbook
+    coverage_pct        float
+    pre_validatable     int  — targets already conclusive from plugin_output alone
+    already_validated   int  — targets with a stored 'validated' result for this project
+    already_not_validated int
+    already_inconclusive  int
+    not_yet_run         int  — targets in scan with playbook but no DB result yet
+    per_plugin          list[dict] — one entry per plugin with playbook
+    """
+    from nessus_parser.services.playbooks import get_playbook, list_playbook_plugin_ids
+    from nessus_parser.services.scans import (
+        list_scan_plugin_ids,
+        load_scan_targets,
+    )
+
+    scan_plugin_ids = list_scan_plugin_ids(
+        scan_path,
+        include_informational=include_informational,
+        min_severity=min_severity,
+    )
+    playbook_ids = set(list_playbook_plugin_ids(db_path))
+    existing_results = get_project_latest_results(db_path, project_name or "default")
+
+    total_targets = 0
+    pre_validatable = 0
+    already: dict[str, int] = {"validated": 0, "not_validated": 0, "inconclusive": 0}
+    not_yet_run = 0
+    per_plugin: list[dict] = []
+
+    has_playbook_ids = [pid for pid in scan_plugin_ids if pid in playbook_ids]
+    no_playbook_ids  = [pid for pid in scan_plugin_ids if pid not in playbook_ids]
+
+    for plugin_id in has_playbook_ids:
+        scan_data = load_scan_targets(scan_path, plugin_id)
+        if scan_data is None:
+            continue
+        playbook = get_playbook(db_path, plugin_id)
+        plugin_targets = list(scan_data["targets"])
+        plugin_pre = 0
+        plugin_done: dict[str, int] = {"validated": 0, "not_validated": 0, "inconclusive": 0, "other": 0}
+        plugin_pending = 0
+
+        for t in plugin_targets:
+            total_targets += 1
+            key = (plugin_id, str(t["host"]), t["port"])
+            db_status = existing_results.get(key)
+
+            if db_status in already:
+                already[db_status] += 1
+                plugin_done[db_status] = plugin_done.get(db_status, 0) + 1
+            elif db_status:
+                plugin_done["other"] = plugin_done.get("other", 0) + 1
+            else:
+                not_yet_run += 1
+                plugin_pending += 1
+
+            po = t.get("plugin_output")
+            if po and playbook:
+                pre_status, _ = _derive_status(playbook, po.strip(), "", exit_code=None)
+                if pre_status in ("validated", "not_validated"):
+                    plugin_pre += 1
+                    pre_validatable += 1
+
+        per_plugin.append({
+            "plugin_id": plugin_id,
+            "plugin_name": str(scan_data["plugin_name"]),
+            "severity": scan_data.get("severity"),
+            "targets": len(plugin_targets),
+            "pre_validatable": plugin_pre,
+            "done": plugin_done,
+            "pending": plugin_pending,
+        })
+
+    total_plugins = len(scan_plugin_ids)
+    has_playbook  = len(has_playbook_ids)
+    coverage_pct  = (has_playbook / total_plugins * 100) if total_plugins else 0.0
+
+    return {
+        "total_plugins": total_plugins,
+        "total_targets": total_targets,
+        "has_playbook": has_playbook,
+        "no_playbook": len(no_playbook_ids),
+        "no_playbook_ids": no_playbook_ids,
+        "coverage_pct": coverage_pct,
+        "pre_validatable": pre_validatable,
+        "already_validated": already["validated"],
+        "already_not_validated": already["not_validated"],
+        "already_inconclusive": already["inconclusive"],
+        "not_yet_run": not_yet_run,
+        "per_plugin": per_plugin,
+    }

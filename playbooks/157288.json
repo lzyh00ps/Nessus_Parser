@@ -3,7 +3,7 @@
   "finding_name": "TLS Version 1.1 Deprecated Protocol",
   "service": "tls",
   "port_logic": "use_scan_port",
-  "command_template": "testssl.sh --color 0 --protocols https://{host}:{port}",
+  "command_template": "testssl.sh --color 0 {testssl_starttls_args} --protocols {host}:{port}",
   "timeout_seconds": 60,
   "allowed_ports": [],
   "blocked_ports": [],
@@ -28,12 +28,24 @@
     "TLSv1.1    offered",
     "TLSv1.1 offered"
   ],
-  "validated_if_absent": [],
+  "validated_if_absent": [
+    "unsupported protocol",
+    "wrong version number",
+    "handshake failure",
+    "tlsv1_1 alert protocol version",
+    "no protocols available",
+    "alert protocol version"
+  ],
   "not_validated_if": [
     "TLSv1.1    not offered",
     "TLSv1.1 not offered",
     "unsupported protocol",
-    "handshake failure"
+    "handshake failure",
+    "ssl/tls not supported",
+    "wrong version number",
+    "alert protocol version",
+    "tlsv1_1 alert protocol version",
+    "no protocols available"
   ],
   "not_validated_if_present": [],
   "inconclusive_if": [

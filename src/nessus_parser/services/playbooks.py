@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import re
+import sys
 from pathlib import Path
 
 from nessus_parser.core.paths import PLAYBOOKS_DIR
@@ -47,8 +49,23 @@ def _pb_dict(payload: dict, key: str) -> dict:
     return {}
 
 
+def _warn_bad_regexes(payload: dict, playbook_path: Path) -> None:
+    """Print a warning to stderr for any uncompilable version_patterns."""
+    version_rule = _pb_dict(payload, "version_rule")
+    for pattern in version_rule.get("version_patterns", []):
+        try:
+            re.compile(str(pattern))
+        except re.error as exc:
+            print(
+                f"WARNING: playbook {playbook_path.name} plugin_id={payload.get('plugin_id')} "
+                f"has invalid regex in version_patterns — '{pattern}': {exc}",
+                file=sys.stderr,
+            )
+
+
 def import_playbook(db_path: Path, playbook_path: Path) -> None:
     payload = json.loads(playbook_path.read_text())
+    _warn_bad_regexes(payload, playbook_path)
     connection = connect(db_path)
     try:
         connection.execute(

@@ -1,9 +1,9 @@
 {
   "plugin_id": 12085,
   "finding_name": "Apache Tomcat Default Files",
-  "service": "https",
-  "port_logic": "any",
-  "command_template": "curl -k -s -m 20 https://{host}:{port}/",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "curl -k -s --max-time 20 http://{host}:{port}/nessus_missing_page_404",
   "timeout_seconds": 30,
   "allowed_ports_json": "[]",
   "blocked_ports_json": "[]",
@@ -14,29 +14,32 @@
     "nmap -Pn --script http-headers,http-generator,http-server-header,http-title -p {port} {host}",
     "nmap -Pn -sV --version-light -p {port} {host}"
   ],
-  "validated_if": [],
+  "validated_if": [
+    "apache tomcat",
+    "apache-tomcat",
+    "apache coyote",
+    "the requested resource is not available",
+    "http status 404 - /nessus_missing_page_404",
+    "apache tomcat/"
+  ],
   "validated_if_absent_json": [],
   "not_validated_if": [],
   "not_validated_if_present_json": [],
   "inconclusive_if": [
-    "failed to resolve",
-    "0 hosts up",
-    "host seems down",
-    "timed out",
     "connection refused",
+    "timed out",
     "no route to host",
     "could not connect",
-    "network is unreachable",
-    "ssl handshake"
+    "host seems down",
+    "failed to resolve"
   ],
   "failure_reason_map": {
-    "failed to resolve": "dns_failure",
-    "0 hosts up": "host_down",
-    "host seems down": "host_down",
-    "timed out": "port_filtered",
     "connection refused": "port_closed",
-    "no route to host": "host_unreachable",
-    "network is unreachable": "host_unreachable"
+    "timed out": "port_filtered",
+    "no route to host": "host_down",
+    "could not connect": "port_closed",
+    "host seems down": "host_down",
+    "failed to resolve": "host_down"
   },
   "version_rule": {
     "product_terms": [
@@ -60,5 +63,9 @@
     "https://www.owasp.org/index.php/Securing_tomcat"
   ],
   "reviewed_by": "analyst",
-  "last_verified": "2026-03-16"
+  "last_verified": "2026-03-16",
+  "fallback_commands": [
+    "curl -k -s --max-time 20 https://{host}:{port}/nessus_missing_page_404",
+    "curl -k -s --max-time 20 http://{host}:{port}/"
+  ]
 }

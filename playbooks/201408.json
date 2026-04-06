@@ -1,0 +1,42 @@
+{
+  "plugin_id": 201408,
+  "finding_name": "Canonical Ubuntu Linux SEoL (14.04.x)",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "nmap -Pn -sV --version-light -p {port} {host}",
+  "timeout_seconds": 30,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [],
+  "version_rule": {},
+  "validated_if": [
+    "ubuntu 14.04",
+    "ubuntu-2ubuntu1",
+    "2ubuntu1",
+    "ubuntu linux 14.04",
+    "ubuntu 2ubuntu2",
+    "6.6.1p1 ubuntu",
+    "ubuntu trusty"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "filtered",
+    "closed",
+    "host seems down",
+    "failed to resolve",
+    "timed out"
+  ],
+  "failure_reason_map": {
+    "filtered": "port_filtered",
+    "closed": "port_closed",
+    "host seems down": "host_down",
+    "failed to resolve": "host_down",
+    "timed out": "port_filtered"
+  },
+  "references": [],
+  "reviewed_by": null,
+  "last_verified": null
+}

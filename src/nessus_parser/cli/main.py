@@ -23,6 +23,7 @@ from nessus_parser.services.plugins import (
 )
 from nessus_parser.services.privacy import sanitize_database
 from nessus_parser.services.reporting import (
+    build_diff_report,
     build_plugin_report,
     export_all_reports_csv,
     export_all_reports_html,
@@ -31,6 +32,7 @@ from nessus_parser.services.reporting import (
 from nessus_parser.services.scans import (
     get_finding_targets,
     list_finding_plugin_ids,
+    list_scan_plugin_ids,
     get_plugin_details,
     import_nessus_scan,
     list_findings,
@@ -55,18 +57,72 @@ from nessus_parser.services.validation import (
     build_summary_banner,
     get_matching_scan_playbook_ids,
     list_projects,
+    persist_no_playbook_findings,
     validate_plugin,
     validate_scan_file,
     validate_scan_file_all,
 )
 from nessus_parser.services.validation import (
+    bulk_override,
     get_latest_validation_results,
+    get_scan_coverage,
     get_validation_summary,
     override_result,
 )
 
 
 _SEVERITY_MAP = {"low": 1, "medium": 2, "high": 3, "critical": 4}
+
+# Commands that write data — warn loudly when falling back to "default" project.
+_WRITE_COMMANDS = {"import-scan", "validate", "validate-all", "override-result", "bulk-override"}
+
+
+def _normalize_project(raw: str) -> str:
+    """Return a clean, consistent project name.
+
+    Rules: lowercase, strip whitespace, replace spaces and hyphens with
+    underscores.  Prints a notice when the name was changed so the analyst
+    always sees exactly what name was stored.
+    """
+    normalized = raw.strip().lower().replace(" ", "_").replace("-", "_")
+    if normalized != raw:
+        print(
+            f"{bright_yellow('NOTICE:')} Project name normalised: '{raw}' → '{normalized}'",
+            file=sys.stderr,
+        )
+    return normalized
+
+
+def _resolve_project(raw: str | None, command: str) -> str:
+    """Normalize the project name and warn when falling back to 'default'.
+
+    Falls back to 'default' only when no -p flag was supplied.  Emits a
+    visible warning on write commands so analysts are never silently mixing
+    engagement data into the shared default bucket.
+    """
+    if raw:
+        return _normalize_project(raw)
+    if command in _WRITE_COMMANDS:
+        print(
+            f"\n{bright_yellow('WARNING:')} No project specified — using \"default\".\n"
+            f"         Use {bold('-p <name>')} for real engagements, e.g.:\n"
+            f"         {dim('nessus-parser import-scan scan.nessus --store-findings -p clientname_20260406')}\n",
+            file=sys.stderr,
+        )
+    return "default"
+
+
+def _project_finding_count(db_path: Path, project_name: str) -> int:
+    """Return the number of findings already stored under *project_name*."""
+    from nessus_parser.db.connection import connect  # local import to avoid circular deps
+    conn = connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) FROM findings WHERE project_name = ?", (project_name,)
+        ).fetchone()
+        return row[0] if row else 0
+    finally:
+        conn.close()
 
 
 def main() -> None:
@@ -84,8 +140,12 @@ def main() -> None:
         choices=["low", "medium", "high", "critical"],
         help="Only process findings at or above this severity level (low=1, medium=2, high=3, critical=4)",
     )
-    parser.add_argument("--persist-results", action="store_true")
+    parser.add_argument("--persist-results", action="store_true", help=argparse.SUPPRESS)  # legacy no-op
+    parser.add_argument("--dry-run", dest="dry_run", action="store_true",
+                        help="Run validation without saving results to the database")
     parser.add_argument("--output", dest="output_path", type=Path)
+    parser.add_argument("-o", "--html-report", dest="html_report_path", type=Path,
+                        help="Generate an HTML report to this path after validation completes")
     parser.add_argument("-p", "--project", dest="project", default=None)
 
     subparsers = parser.add_subparsers(dest="command")
@@ -151,6 +211,20 @@ def main() -> None:
 
     validate_all = subparsers.add_parser("validate-all")
     validate_all.add_argument("-p", "--project", dest="project", default=None)
+    validate_all.add_argument("-o", "--html-report", dest="html_report_path", type=Path,
+                              help="Generate an HTML report to this path after validation completes")
+    validate_all.add_argument(
+        "--min-severity",
+        dest="min_severity",
+        choices=["low", "medium", "high", "critical"],
+        help="Only validate findings at or above this severity level",
+    )
+    validate_all.add_argument(
+        "--include-informational",
+        dest="include_informational",
+        action="store_true",
+        default=True,
+    )
 
     sanitize_db = subparsers.add_parser("sanitize-db")
     sanitize_db.add_argument("-p", "--project", dest="project", default=None)
@@ -159,6 +233,7 @@ def main() -> None:
 
     show_results = subparsers.add_parser("show-results")
     show_results.add_argument("--plugin-id", type=int, required=True)
+    show_results.add_argument("-p", "--project", dest="project", default=None)
 
     report = subparsers.add_parser("report")
     report.add_argument("--plugin-id", type=int, required=True)
@@ -173,6 +248,15 @@ def main() -> None:
     report_html.add_argument("--output", type=Path, required=True)
     report_html.add_argument("-p", "--project", dest="project", default=None)
 
+    diff_projects = subparsers.add_parser(
+        "diff-projects",
+        help="Compare validation results between two projects (before vs after patching)",
+    )
+    diff_projects.add_argument("--before", required=True, help="Project name for the baseline scan")
+    diff_projects.add_argument("--after", required=True, help="Project name for the re-test scan")
+    diff_projects.add_argument("-o", "--output", dest="output_path", type=Path,
+                               help="Write an HTML diff report to this path")
+
     override = subparsers.add_parser("override-result")
     override.add_argument("--plugin-id", type=int, required=True)
     override.add_argument("--host", required=True)
@@ -180,12 +264,37 @@ def main() -> None:
     override.add_argument("--status", required=True)
     override.add_argument("--reason")
     override.add_argument("--note")
+    override.add_argument("-p", "--project", dest="project", default=None)
+
+    bulk_override_cmd = subparsers.add_parser(
+        "bulk-override",
+        help="Apply manual overrides from a CSV file (columns: plugin_id,host,port,status,reason,note)",
+    )
+    bulk_override_cmd.add_argument("--csv", dest="csv_path", type=Path, required=True,
+                                   help="Path to CSV file with override rows")
+    bulk_override_cmd.add_argument("-p", "--project", dest="project", default=None)
+
+    coverage_cmd = subparsers.add_parser(
+        "coverage",
+        help="Show playbook coverage and pre-validation estimate for a scan file",
+    )
+    coverage_cmd.add_argument("-f", "--scan-file", dest="scan_file", type=Path, required=True)
+    coverage_cmd.add_argument("-p", "--project", dest="project", default=None)
+    coverage_cmd.add_argument(
+        "--min-severity",
+        dest="min_severity",
+        choices=["low", "medium", "high", "critical"],
+    )
+    coverage_cmd.add_argument("--include-informational", dest="include_informational",
+                               action="store_true", default=True)
+    coverage_cmd.add_argument("--verbose", action="store_true",
+                               help="Show per-plugin breakdown")
 
     args = parser.parse_args()
 
     if args.scan_file and (args.validate_from_file or args.validate_all_from_file):
         initialize_database(DB_PATH)
-        project_name = args.project or "default"
+        project_name = _resolve_project(args.project, "validate-all")
         min_severity = _SEVERITY_MAP.get(args.min_severity) if args.min_severity else None
         if args.validate_from_file:
             if args.plugin_id_flag is None:
@@ -194,7 +303,7 @@ def main() -> None:
                 DB_PATH,
                 args.scan_file,
                 args.plugin_id_flag,
-                persist_results=args.persist_results,
+                persist_results=not args.dry_run,
                 project_name=project_name,
             )
         else:
@@ -208,6 +317,13 @@ def main() -> None:
                 selected_plugin_ids = [
                     plugin_id for plugin_id in selected_plugin_ids if plugin_id in requested_ids
                 ]
+            all_scan_plugin_ids = set(
+                list_scan_plugin_ids(
+                    args.scan_file,
+                    include_informational=args.include_informational,
+                    min_severity=min_severity,
+                )
+            )
             matching_plugin_ids = get_matching_scan_playbook_ids(
                 DB_PATH,
                 args.scan_file,
@@ -217,6 +333,16 @@ def main() -> None:
             )
             if args.plugin_limit is not None:
                 matching_plugin_ids = matching_plugin_ids[:args.plugin_limit]
+            # Record no_playbook status for scan findings that have no playbook
+            unmatched_plugin_ids = sorted(all_scan_plugin_ids - set(matching_plugin_ids))
+            if unmatched_plugin_ids:
+                no_pb_recorded = persist_no_playbook_findings(
+                    DB_PATH, args.scan_file, unmatched_plugin_ids, project_name=project_name
+                )
+                print(
+                    f"{dim(f'  {len(unmatched_plugin_ids)} plugins have no playbook — recorded {no_pb_recorded} host/port entries as no_playbook')}",
+                    file=sys.stderr,
+                )
             if not matching_plugin_ids:
                 output = f"No matching playbooks found for plugins present in {args.scan_file}"
             else:
@@ -253,8 +379,11 @@ def main() -> None:
             args.output_path.parent.mkdir(parents=True, exist_ok=True)
             args.output_path.write_text(output + "\n")
             print(f"Wrote validation output to {args.output_path}")
-            return
-        print(output)
+        else:
+            print(output)
+        if getattr(args, "html_report_path", None) is not None:
+            html_path = export_all_reports_html(DB_PATH, args.html_report_path, project_name=project_name)
+            print(f"Wrote HTML report to {html_path}")
         return
 
     if args.command is None:
@@ -268,7 +397,20 @@ def main() -> None:
     initialize_database(DB_PATH)
 
     if args.command == "import-scan":
-        project_name = getattr(args, "project", None) or "default"
+        project_name = _resolve_project(getattr(args, "project", None), "import-scan")
+        if args.store_findings:
+            existing_count = _project_finding_count(DB_PATH, project_name)
+            if existing_count == 0:
+                print(
+                    f"{bright_cyan('INFO:')} Creating new project {bold(repr(project_name))}",
+                    file=sys.stderr,
+                )
+            else:
+                print(
+                    f"{bright_cyan('INFO:')} Appending to existing project {bold(repr(project_name))} "
+                    f"(currently {existing_count:,} findings)",
+                    file=sys.stderr,
+                )
         count = import_nessus_scan(DB_PATH, args.scan_path, store_findings=args.store_findings, project_name=project_name)
         if args.store_findings:
             print(f"Imported {count} plugin rows and stored findings from {args.scan_path} (project={project_name})")
@@ -434,12 +576,12 @@ def main() -> None:
         return
 
     if args.command == "validate":
-        project_name = getattr(args, "project", None) or "default"
+        project_name = _resolve_project(getattr(args, "project", None), "validate")
         print(validate_plugin(DB_PATH, args.plugin_id, project_name=project_name))
         return
 
     if args.command == "validate-all":
-        project_name = getattr(args, "project", None) or "default"
+        project_name = _resolve_project(getattr(args, "project", None), "validate-all")
         min_severity = _SEVERITY_MAP.get(args.min_severity) if args.min_severity else None
         plugin_ids = list_playbook_plugin_ids(DB_PATH)
         finding_plugin_ids = set(
@@ -469,6 +611,9 @@ def main() -> None:
                 agg_status[status] = agg_status.get(status, 0) + count
                 agg_targets += count
         print(build_summary_banner(total, agg_status, agg_targets))
+        if getattr(args, "html_report_path", None) is not None:
+            html_path = export_all_reports_html(DB_PATH, args.html_report_path, project_name=project_name)
+            print(f"Wrote HTML report to {html_path}")
         return
 
     if args.command == "sanitize-db":
@@ -492,6 +637,7 @@ def main() -> None:
         return
 
     if args.command == "show-results":
+        project_name = getattr(args, "project", None)
         plugin = get_plugin_details(DB_PATH, args.plugin_id)
         if plugin is None:
             print(f"Plugin {args.plugin_id} not found in local database")
@@ -500,7 +646,7 @@ def main() -> None:
         print(f"plugin_id: {plugin[0]}")
         print(f"name: {plugin[1]}")
 
-        summary = get_validation_summary(DB_PATH, args.plugin_id)
+        summary = get_validation_summary(DB_PATH, args.plugin_id, project_name=project_name)
         if not summary:
             print("results: none")
             return
@@ -509,7 +655,7 @@ def main() -> None:
         for status, count in summary:
             print(f"status\t{status}\tcount={count}")
 
-        latest_results = get_latest_validation_results(DB_PATH, args.plugin_id)
+        latest_results = get_latest_validation_results(DB_PATH, args.plugin_id, project_name=project_name)
         print(f"latest_results: {len(latest_results)}")
         for host, port, status, reason, analyst_note, command, executed_at, source in latest_results[:50]:
             reason_text = reason if reason is not None else "-"
@@ -522,6 +668,7 @@ def main() -> None:
         return
 
     if args.command == "override-result":
+        project_name = _resolve_project(getattr(args, "project", None), "override-result")
         success = override_result(
             DB_PATH,
             args.plugin_id,
@@ -530,11 +677,80 @@ def main() -> None:
             args.status,
             args.reason,
             args.note,
+            project_name=project_name,
         )
         if not success:
             print(f"No finding found for plugin {args.plugin_id} host {args.host} port {args.port}")
             return
         print(f"Recorded manual override for plugin {args.plugin_id} host {args.host} port {args.port}")
+        return
+
+    if args.command == "bulk-override":
+        project_name = _resolve_project(getattr(args, "project", None), "bulk-override")
+        count, errors = bulk_override(DB_PATH, args.csv_path, project_name=project_name)
+        for err in errors:
+            print(f"  SKIP  {err}", file=sys.stderr)
+        print(f"Applied {count} override(s) to project '{project_name}'")
+        if errors:
+            print(f"{len(errors)} row(s) skipped — see above for details", file=sys.stderr)
+        return
+
+    if args.command == "coverage":
+        project_name = getattr(args, "project", None)
+        min_severity = _SEVERITY_MAP.get(args.min_severity) if args.min_severity else None
+        stats = get_scan_coverage(
+            DB_PATH,
+            args.scan_file,
+            project_name=project_name,
+            min_severity=min_severity,
+            include_informational=args.include_informational,
+        )
+        scope = f" (project={project_name})" if project_name else ""
+        print(heavy_separator())
+        print(bold(bright_cyan(f"  COVERAGE REPORT{scope}")))
+        print(dim(f"  Scan: {args.scan_file}"))
+        print(heavy_separator())
+        print(f"  {bold('Total plugins:    ')} {stats['total_plugins']}")
+        print(f"  {bold('Total targets:    ')} {stats['total_targets']}")
+        print(f"  {bold('Have playbook:    ')} {green(str(stats['has_playbook']))}  ({stats['coverage_pct']:.1f}%)")
+        print(f"  {bold('No playbook:      ')} {dim(str(stats['no_playbook']))}")
+        print()
+        print(f"  {bold('Pre-validatable:  ')} {bright_cyan(str(stats['pre_validatable']))}  (conclusive from Nessus plugin_output, no probe needed)")
+        print()
+        print(f"  {bold('Already run:')}")
+        print(f"    {status_badge('validated')}      {stats['already_validated']}")
+        print(f"    {status_badge('not_validated')}  {stats['already_not_validated']}")
+        print(f"    {status_badge('inconclusive')}   {stats['already_inconclusive']}")
+        print(f"    {dim('Not yet run:    ')} {stats['not_yet_run']}")
+        print(heavy_separator())
+        if args.verbose and stats["per_plugin"]:
+            print(bold("  PER-PLUGIN BREAKDOWN"))
+            print(heavy_separator())
+            for p in stats["per_plugin"]:
+                sev = p.get("severity") or "-"
+                done = p["done"]
+                pre  = p["pre_validatable"]
+                pend = p["pending"]
+                detail = (
+                    f"  tp={done.get('validated',0)}"
+                    f"  fp={done.get('not_validated',0)}"
+                    f"  inc={done.get('inconclusive',0)}"
+                    f"  pending={pend}"
+                    f"  pre={pre}"
+                )
+                print(f"  {severity_badge(sev)} {bold(str(p['plugin_id']))}  {dim(str(p['plugin_name'])[:55])}  {dim(detail)}")
+        return
+
+    if args.command == "diff-projects":
+        output = build_diff_report(
+            DB_PATH,
+            args.before,
+            args.after,
+            output_path=getattr(args, "output_path", None),
+        )
+        print(output)
+        if getattr(args, "output_path", None):
+            print(f"Wrote HTML diff report to {args.output_path}")
         return
 
     if args.command == "report":

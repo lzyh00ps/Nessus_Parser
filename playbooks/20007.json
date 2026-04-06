@@ -1,0 +1,57 @@
+{
+  "plugin_id": 20007,
+  "finding_name": "SSL Version 2 and 3 Protocol Detection",
+  "service": "tls",
+  "port_logic": "use_scan_port",
+  "command_template": "nmap -Pn --script ssl-enum-ciphers -p {port} {host}",
+  "timeout_seconds": 15,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {
+    "25": "smtp",
+    "587": "smtp",
+    "465": "smtp"
+  },
+  "fallback_commands": [
+    "sslscan --no-colour {sslscan_starttls_args} {host}:{port}",
+    "openssl s_client -connect {host}:{port} {openssl_tls_args} -ssl3 </dev/null 2>&1"
+  ],
+  "version_rule": {},
+  "validated_if": [
+    "cipher is",
+    "ssl-session:",
+    "sslv3     enabled",
+    "sslv2     enabled",
+    "|   sslv3:"
+  ],
+  "validated_if_absent": [],
+  "not_validated_if": [
+    "handshake failure",
+    "sslv3 alert handshake failure",
+    "no protocols available",
+    "ssl alert number 40"
+  ],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "could not resolve",
+    "host seems down",
+    "no route to host",
+    "bio_lookup_ex",
+    "cannot create af_netlink",
+    "unknown option"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "host seems down": "host_down",
+    "could not resolve": "host_down",
+    "no route to host": "host_down"
+  },
+  "references": [
+    "https://www.tenable.com/plugins/nessus/20007"
+  ],
+  "reviewed_by": null,
+  "last_verified": null
+}

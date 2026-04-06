@@ -1,0 +1,43 @@
+{
+  "plugin_id": 110530,
+  "finding_name": "Web Server Does Not Return X-Content-Type-Options Header",
+  "service": "https",
+  "port_logic": "use_scan_port",
+  "command_template": "curl -sk -I --max-time 15 https://{host}:{port}/",
+  "timeout_seconds": 20,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [
+    "testssl.sh --color 0 --headers https://{host}:{port}"
+  ],
+  "version_rule": {},
+  "validated_if": [],
+  "validated_if_absent": [
+    "x-content-type-options:"
+  ],
+  "not_validated_if": [],
+  "not_validated_if_present": [
+    "x-content-type-options:"
+  ],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "could not resolve host",
+    "failed to connect",
+    "empty reply from server"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "could not resolve host": "host_down",
+    "failed to connect": "host_down",
+    "empty reply from server": "inconclusive"
+  },
+  "references": [
+    "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options",
+    "https://www.tenable.com/plugins/nessus/110530"
+  ],
+  "reviewed_by": "analyst",
+  "last_verified": "2026-04-05"
+}

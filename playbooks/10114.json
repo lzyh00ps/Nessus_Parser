@@ -15,7 +15,9 @@
   ],
   "validated_if_absent": [],
   "not_validated_if": [
-    "0 packets received"
+    "max rtt: n/a",
+    "0 packets received",
+    "no reply"
   ],
   "not_validated_if_present": [],
   "inconclusive_if": [

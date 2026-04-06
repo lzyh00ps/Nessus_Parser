@@ -1,15 +1,34 @@
+# --- Python / build ---
 .venv/
 __pycache__/
 .pytest_cache/
 *.pyc
-*.sqlite3
-*.db
-*.nessus
-plugins.zip
-data/runtime/
 dist/
 build/
-.claude/
 *.egg-info/
-# Generated HTML reports at root level (templates live under src/)
+
+# --- Database files (contain client findings and validation results) ---
+*.sqlite3
+*.db
+
+# --- Scan files (contain client host/IP data) ---
+*.nessus
+*.nessus.gz
+
+# --- Generated reports (contain client findings) ---
 /*.html
+reports/
+*.csv
+
+# --- Runtime data directory (DB lives here) ---
+data/runtime/
+
+# --- Tool artefacts ---
+plugins.zip
+
+# --- IDE / editor ---
+.claude/
+.vscode/
+.idea/
+*.swp
+*.swo

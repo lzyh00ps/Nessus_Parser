@@ -1,0 +1,44 @@
+{
+  "plugin_id": 31649,
+  "finding_name": "PHP 5.x < 5.2 Multiple Vulnerabilities",
+  "service": "banner",
+  "port_logic": "use_scan_port",
+  "command_template": "curl -k -s -I --max-time 15 http://{host}:{port}/",
+  "timeout_seconds": 20,
+  "allowed_ports": [],
+  "blocked_ports": [],
+  "starttls_protocol_map": {},
+  "fallback_commands": [
+    "nmap -Pn -sV --version-light -p {port} {host}"
+  ],
+  "version_rule": {
+    "product_terms": [
+      "php"
+    ],
+    "version_patterns": [
+      "php/(\\d+\\.\\d+\\.\\d+)",
+      "php\\s+(\\d+\\.\\d+\\.\\d+)"
+    ],
+    "affected_lt": "5.2.0"
+  },
+  "validated_if": [],
+  "validated_if_absent": [],
+  "not_validated_if": [],
+  "not_validated_if_present": [],
+  "inconclusive_if": [
+    "connection refused",
+    "timed out",
+    "could not connect",
+    "host seems down",
+    "could not resolve"
+  ],
+  "failure_reason_map": {
+    "connection refused": "port_closed",
+    "timed out": "port_filtered",
+    "host seems down": "host_down",
+    "could not resolve": "host_down"
+  },
+  "references": [],
+  "reviewed_by": null,
+  "last_verified": null
+}
