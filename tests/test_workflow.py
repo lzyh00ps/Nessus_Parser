@@ -282,6 +282,9 @@ class WorkflowTests(unittest.TestCase):
             self.assertEqual(_build_testssl_starttls_args(playbook, 25), "--starttls smtp")
             self.assertEqual(_build_sslscan_starttls_args(playbook, 443), "")
 
+            # Seed a validation run so the HTML report includes this plugin.
+            override_result(db_path, 56984, "mail.example", 25, "validated", None, None)
+
             export_all_reports_html(db_path, output_path)
             html_text = output_path.read_text()
             self.assertIn("Nessus Parser Report", html_text)
