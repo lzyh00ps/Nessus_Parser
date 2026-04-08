@@ -143,6 +143,18 @@
 
     /* No results */
     .no-results { text-align: center; padding: 3rem; color: var(--text-dim); font-size: 1rem; }
+
+    /* Per-table toolbar */
+    .table-toolbar { display: flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0 0.4rem; flex-wrap: wrap; }
+    .table-toolbar .tt-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim); font-weight: 600; white-space: nowrap; }
+    .table-toolbar select { padding: 0.28rem 0.5rem; border: 1px solid var(--border); border-radius: 5px; background: var(--bg-input); color: var(--text); font-size: 0.78rem; }
+    .table-toolbar select:focus { outline: none; border-color: var(--accent); }
+
+    /* Copy buttons */
+    .copy-btn { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.25rem 0.55rem; font-size: 0.72rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-card); color: var(--text-dim); cursor: pointer; white-space: nowrap; }
+    .copy-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(88,166,255,.07); }
+    .copy-btn.copied { border-color: var(--sev-low); color: var(--sev-low); }
+    .cmd-copy-btn { margin-left: 0.3rem; vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -333,11 +345,20 @@ ${fullOutputHtml}</div>`;
             ${evidenceHtml}
             <details>
               <summary>Show ${rows.length} result rows</summary>
-              <table>
+              <div class="table-toolbar">
+                <span class="tt-label">Filter status:</span>
+                <select onchange="filterTableRows('tbl-${plugin.plugin_id}', this.value, 'tbcount-${plugin.plugin_id}')">
+                  <option value="">All</option>
+                  ${[...new Set(rows.map(r => r.status))].sort().map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')}
+                </select>
+                <button class="copy-btn" onclick="copyHosts('tbl-${plugin.plugin_id}', this)">&#x2398; Copy Visible Hosts</button>
+                <span class="tt-label" id="tbcount-${plugin.plugin_id}">${Math.min(rows.length, 200)} rows</span>
+              </div>
+              <table id="tbl-${plugin.plugin_id}">
                 <thead><tr><th>Host</th><th>Port</th><th>Status</th><th>Reason</th><th>Analyst Note</th><th>Source</th><th>Executed At</th><th>Command</th></tr></thead>
                 <tbody>
                   ${rows.slice(0, 200).map(row => `
-                    <tr class="${rowClass(row.status)}">
+                    <tr class="${rowClass(row.status)}" data-status="${escapeHtml(row.status)}">
                       <td>${escapeHtml(String(row.host))}</td>
                       <td>${escapeHtml(String(row.port))}</td>
                       <td><span class="st-cell ${statusCellClass(row.status)}">${escapeHtml(row.status)}</span></td>
@@ -345,7 +366,10 @@ ${fullOutputHtml}</div>`;
                       <td>${escapeHtml(row.analyst_note)}</td>
                       <td>${escapeHtml(row.source)}</td>
                       <td>${escapeHtml(row.executed_at)}</td>
-                      <td>${row.source === 'plugin_output' && !row.command ? '<em>Nessus scan data</em>' : `<code>${escapeHtml(row.command)}</code>`}</td>
+                      <td>${row.source === 'plugin_output' && !row.command
+                        ? '<em>Nessus scan data</em>'
+                        : `<code>${escapeHtml(row.command)}</code><button class="copy-btn cmd-copy-btn" data-copy="${escapeHtml(row.command)}" onclick="copyFromAttr(this)">&#x2398; Copy</button>`
+                      }</td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -386,6 +410,47 @@ ${fullOutputHtml}</div>`;
       const a = document.createElement("a"); a.href = url; a.download = "nessus-filtered-results.csv";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
+    }
+
+    function filterTableRows(tableId, status, countId) {
+      const tbl = document.getElementById(tableId);
+      if (!tbl) return;
+      let visible = 0;
+      tbl.querySelectorAll('tbody tr').forEach(tr => {
+        const match = !status || tr.getAttribute('data-status') === status;
+        tr.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      const counter = countId && document.getElementById(countId);
+      if (counter) counter.textContent = visible + ' row' + (visible !== 1 ? 's' : '');
+    }
+
+    function copyHosts(tableId, btn) {
+      const tbl = document.getElementById(tableId);
+      if (!tbl) return;
+      const seen = new Set();
+      tbl.querySelectorAll('tbody tr').forEach(tr => {
+        if (tr.style.display === 'none') return;
+        const host = tr.querySelector('td:first-child');
+        if (host) seen.add(host.textContent.trim());
+      });
+      const text = [...seen].join('\n');
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '&#x2714; Copied ' + seen.size + ' host' + (seen.size !== 1 ? 's' : '');
+        btn.classList.add('copied');
+        setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 2000);
+      });
+    }
+
+    function copyFromAttr(btn) {
+      const text = btn.getAttribute('data-copy');
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '&#x2714; Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 1500);
+      });
     }
 
     function toggleEvidence(uid) {
